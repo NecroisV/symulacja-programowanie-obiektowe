@@ -7,7 +7,7 @@ public class ParametrySymulacji {
     private int poczatkowaLiczbaZakazonych;
     private float szansaNaRanePoWalce;
     private Map<String, Float> wagiRuchu;
-    private float szansePoczatkoweNaEkwipunekIRany;
+    private int[] szansePoczatkoweNaEkwipunekIRany;
 
     public ParametrySymulacji(){
 
@@ -15,5 +15,13 @@ public class ParametrySymulacji {
 
     public void wczytajParametry(){
 
+    }
+
+    public int[] przekazParametryDoKreacjiAgentow(){
+        return new int[]{poczatkowaLiczbaOcalalych, poczatkowaLiczbaZakazonych};
+    }
+
+    public int[] przekazSzansePoczatkoweNaEkwipunekIRany(){
+        return szansePoczatkoweNaEkwipunekIRany;
     }
 }
