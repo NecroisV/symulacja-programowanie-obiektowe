@@ -1,17 +1,18 @@
 package org.example;
 
 import java.util.List;
+import static java.lang.Math.round;
 
 public class Ocalaly extends Agent{
-    private int poziomEnergii;
+    private int poziomEnergii = 100;
     private List<Pole> pamiecOdwiedzonychPol;
     private int pojemnoscEkwipunku;
     private List<Ekwipunek> ekwipunek;
     private float szansaNaWyleczenie;
-    private boolean czyGloduje;
+    private boolean czyGloduje = false;
 
-    public Ocalaly(){
-        super();
+    public Ocalaly(int given_x, int given_y, int given_zdrowie){
+        super(given_x, given_y, given_zdrowie);
     }
 
     public void zmienPoziomEnergii(int ilosc){
@@ -46,7 +47,9 @@ public class Ocalaly extends Agent{
 
     }
 
-    public Zakazony transformujWZakazonego(){
-        return new Zakazony();
+    public Zakazony transformujWZakazonego(Zakazony z){
+        int[] pozycja = przekazPozycje();
+
+        return new Zakazony(pozycja[0], pozycja[1], (int) round(z.przekazZdrowie() / 2.0));
     }
 }
