@@ -9,7 +9,7 @@ public class Bron extends Ekwipunek{
     {
      this.bazowaSila = bazowaSila;
      this.maxWytrzymalosc = maxWytrzymalosc;
-     this,aktualnaWytrzymalosc = aktualnaWytrzymalosc;
+     this.aktualnaWytrzymalosc = aktualnaWytrzymalosc;
     }
 
     public void zmniejszWytrzymalosc()
@@ -62,6 +62,7 @@ public class Bron extends Ekwipunek{
     @Override
     public String toString()
     {
-        return {"Bron(str: "+bazowaSila+"dur: "+aktualnaWytrzymalosc + "/" + maxWytrzymalosc + ")";}
+        return {"Bron(strenght: " + bazowaSila + " durability: "
+                + aktualnaWytrzymalosc + "/" + maxWytrzymalosc + ")";}
     }
 }
