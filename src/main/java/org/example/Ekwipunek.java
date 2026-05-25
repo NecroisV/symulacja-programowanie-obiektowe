@@ -1,5 +1,5 @@
 package org.example;
 
-public abstract class Ekwipunek {
-
+public abstract class Ekwipunek
+{
 }
