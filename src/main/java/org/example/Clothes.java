@@ -1,13 +1,13 @@
 package org.example;
 
-public class Cloths extends Equipment
+public class Clothes extends Equipment
 {
     private int damageReduction;
     private int energyUseReduction;
     private int infectionPrevention;
     private int maxInfectionPrevention;
 
-    public Cloths(int damageReduction, int energyUseReduction, int infectionPrevention, int maxInfectionPrevention)
+    public Clothes(int damageReduction, int energyUseReduction, int infectionPrevention, int maxInfectionPrevention)
     {
         this.damageReduction = damageReduction;
         this.energyUseReduction = energyUseReduction;
@@ -78,7 +78,7 @@ public class Cloths extends Equipment
     @Override
     public String toString()
     {
-        return ("Cloths(dmgRed: " + damageReduction + " energyRed: " + energyUseReduction
+        return ("Clothes(dmgRed: " + damageReduction + " energyRed: " + energyUseReduction
                 + " infectionDef: " + infectionPrevention + "/" + maxInfectionPrevention +")");
     }
 }
