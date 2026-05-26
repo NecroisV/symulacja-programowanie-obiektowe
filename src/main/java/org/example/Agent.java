@@ -3,105 +3,104 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.RandomAccess;
 
 public abstract class Agent {
     private int x;
     private int y;
-    private int wiek = 0;
-    private int poziomZdrowia;
-    private int bazowaSila;
-    private int bazowePoleWidzenia;
-    private int bazowaPredkosc = 3;
-    private boolean czyZywy = true;
-    private List<Rana> rany;
+    private int age = 0;
+    private int healthLevel;
+    private int baseStrength;
+    private int baseFOV;
+    private int baseSpeed = 1;
+    private boolean isAlive = true;
+    private List<Wound> wounds;
 
-    protected Agent(int given_x, int given_y, int given_zdrowie){
+    protected Agent(int given_x, int given_y, int given_health){
         x = given_x;
         y = given_y;
-        poziomZdrowia = given_zdrowie;
+        healthLevel = given_health;
     }
 
-    public int[] wykonajRuch(Pole start){
-        ArrayList<Pole> mozliwePola = mozliwyRuch(start);
+    public int[] makeMove(Space start){
+        ArrayList<Space> availableSpaces = possibleMove(start);
 
         Random random = new Random();
-        Pole docelowePole = mozliwePola.get(random.nextInt(mozliwePola.size()));
-        return docelowePole.przkazPozycje();
+        Space targetSpace = availableSpaces.get(random.nextInt(availableSpaces.size()));
+        return targetSpace.getPosition();
     }
 
-    private ArrayList<Pole> mozliwyRuch(Pole start) {
-        ArrayList<Pole> odwiedzonePola = new ArrayList<>();
+    private ArrayList<Space> possibleMove(Space start) {
+        ArrayList<Space> visitedSpaces = new ArrayList<>();
 
-        if (start.czyJestSciana()) {
-            return odwiedzonePola;
+        if (start.isItWall()) {
+            return visitedSpaces;
         }
 
-        ArrayList<Pole> kolejka = new ArrayList<>();
-        ArrayList<Integer> odleglosci = new ArrayList<>();
+        ArrayList<Space> que = new ArrayList<>();
+        ArrayList<Integer> distances = new ArrayList<>();
 
-        kolejka.add(start);
-        odleglosci.add(0);
-        odwiedzonePola.add(start);
+        que.add(start);
+        distances.add(0);
+        visitedSpaces.add(start);
 
-        int analizowanyIndeks = 0;
+        int analysedIndex = 0;
 
-        while (analizowanyIndeks < kolejka.size()) {
-            Pole aktualne = kolejka.get(analizowanyIndeks);
-            int aktualnaOdleglosc = odleglosci.get(analizowanyIndeks);
-            analizowanyIndeks++;
+        while (analysedIndex < que.size()) {
+            Space actual = que.get(analysedIndex);
+            int actualDistance = distances.get(analysedIndex);
+            analysedIndex++;
 
-            if (aktualnaOdleglosc >= bazowaPredkosc) {
+            if (actualDistance >= baseSpeed) {
                 continue;
             }
 
-            Pole[] sasiedzi = {aktualne.przekazUp(), aktualne.przekazRight(), aktualne.przekazDown(), aktualne.przekazLeft()};
+            Space[] neighbours = {actual.getUp(), actual.getRight(), actual.getDown(), actual.getLeft()};
 
-            for (Pole sasiad : sasiedzi) {
-                if (sasiad != null && !sasiad.czyJestSciana() && !odwiedzonePola.contains(sasiad)) {
-                    kolejka.add(sasiad);
-                    odleglosci.add(aktualnaOdleglosc + 1);
-                    odwiedzonePola.add(sasiad);
+            for (Space n : neighbours) {
+                if (n != null && !n.isItWall() && !visitedSpaces.contains(n)) {
+                    que.add(n);
+                    distances.add(actualDistance + 1);
+                    visitedSpaces.add(n);
                 }
             }
         }
 
-        return odwiedzonePola;
+        return visitedSpaces;
     }
 
-    public void starzejSie(){
-        wiek++;
+    public void ageUp(){
+        age++;
     }
 
-    public void umrzyj(){
-
-    }
-
-    public void zmienPoziomZdrowia(int ilosc){
+    public void die(){
 
     }
 
-    public int obliczPoleWidzenia(float poziomOswietlenia){
+    public void changeHealthLevel(int ammount){
+
+    }
+
+    public int calcualteFOV(float lightLevel){
         return 0;
     }
 
-    public int obliczSile(){
+    public int calculateStrength(){
         return 0;
     }
 
-    public int obliczPredkosc(){
+    public int calculateSpeed(){
         return 0;
     }
 
-    public boolean czyJestZywy(){return czyZywy;}
+    public boolean isItAlive(){return isAlive;}
 
-    public int[] przekazPozycje(){
+    public int[] getPosition(){
         return new int[]{x, y};
     }
 
-    public int przekazZdrowie(){return poziomZdrowia;}
+    public int getHealth(){return healthLevel;}
 
-    public void otrzymajRane(){
+    public void reviveWound(){
 
     }
 }

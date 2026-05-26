@@ -1,5 +1,5 @@
 package org.example;
 
-public enum PoraDnia {
+public enum TimeOfDay {
 
 }

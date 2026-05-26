@@ -1,9 +1,9 @@
 package org.example;
 
-public class RanaReki extends Rana{
+public class ArmWound extends Wound {
     private int redukcjaSily;
 
-    public RanaReki(){
+    public ArmWound(){
 
     }
 }
