@@ -9,7 +9,8 @@ public class Main {
             srodowiskoSymulacji.krokSymulacji();
             try {
                 TimeUnit.SECONDS.sleep(2);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }

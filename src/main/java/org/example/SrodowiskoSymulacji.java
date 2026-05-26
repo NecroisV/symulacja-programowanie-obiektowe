@@ -166,6 +166,10 @@ public class SrodowiskoSymulacji {
         int szerokosc = plansza[0].length;
         int wysokosc = plansza.length;
 
+        //do czyszczenia podglądu
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
+
         System.out.println("\n--- TICK: " + aktualnyTick + " ---");
         for (int i = 0; i < wysokosc; i++) {
             for (int j = 0; j < szerokosc; j++) {
