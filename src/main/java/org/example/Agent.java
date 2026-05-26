@@ -12,7 +12,7 @@ public abstract class Agent {
     private int poziomZdrowia;
     private int bazowaSila;
     private int bazowePoleWidzenia;
-    private int bazowaPredkosc;
+    private int bazowaPredkosc = 3;
     private boolean czyZywy = true;
     private List<Rana> rany;
 

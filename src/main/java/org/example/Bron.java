@@ -25,7 +25,7 @@ public class Bron extends Ekwipunek{
         if(maxWytrzymalosc==0) {return 0;}
         else
         {
-            return (int) Math.round((double) (bazowaSila*aktualnaWytrzymalosc)/maxWytrzymalosc)
+            return (int) Math.round((double) (bazowaSila*aktualnaWytrzymalosc)/maxWytrzymalosc);
         }
     }
 
@@ -62,7 +62,6 @@ public class Bron extends Ekwipunek{
     @Override
     public String toString()
     {
-        return {"Bron(strenght: " + bazowaSila + " durability: "
-                + aktualnaWytrzymalosc + "/" + maxWytrzymalosc + ")";}
+        return "Bron(strenght: " + bazowaSila + " durability: " + aktualnaWytrzymalosc + "/" + maxWytrzymalosc + ")";
     }
 }

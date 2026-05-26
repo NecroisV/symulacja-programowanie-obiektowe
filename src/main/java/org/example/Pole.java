@@ -28,6 +28,8 @@ public class Pole {
         return 0.0f;
     }
 
+    public void stworzSciane(){czySciana=true;}
+
     public void zniszczSciane(){
     }
 

@@ -5,6 +5,7 @@ public class Ubranie extends Ekwipunek
     private int redukcjaObrazen;
     private int redukcjaZuzyciaEnergii;
     private int obronaPrzedZakazeniem;
+    private int maxObronaPrzedZakazeniem;
 
     public Ubranie(int redukcjaObrazen, int redukcjaZuzyciaEnergii, int obronaPrzedZakazeniem, int maxObronaPrzedZakazeniem)
     {
@@ -16,17 +17,14 @@ public class Ubranie extends Ekwipunek
 
     public int obliczAktualnaRedukcjeObrazen()
     {
-        if(maxObronaPrzedZakazeniem==0) {return 0;}
-        else if(maxObronaPrzedZakazeniem>0)
-        {
-            return (int) Math.round((double) (redukcjaObrazen*obronaPrzedZakazeniem)/maxObronaPrzedZakazeniem);
-        }
+        if(maxObronaPrzedZakazeniem<=0) {return 0;}
+        return (int) Math.round((double) (redukcjaObrazen*obronaPrzedZakazeniem)/maxObronaPrzedZakazeniem);
     }
 
     public int obliczAktualnaRedukcjeZuzyciaEnergii()
     {
-        if(maxObronaPrzedZakazeniem==0); {return 0;}
-        else if(maxObronaPrzedZakazeniem>0)
+        if(maxObronaPrzedZakazeniem<=0) {return 0;}
+        else
         {
             return (int) Math.round((double) (redukcjaZuzyciaEnergii*obronaPrzedZakazeniem)/maxObronaPrzedZakazeniem);
         }
@@ -78,9 +76,9 @@ public class Ubranie extends Ekwipunek
     }
 
     @Override
-    public string toString()
+    public String toString()
     {
-        return {"Ubranie(dmgRed: " + redukcjaObrazen + " energyRed: " + redukcjaZuzyciaEnergii
-                + " infectionDef: " + obronaPrzedZakazeniem+ "/" +maxObronaPrzedZakazeniem+")"}
+        return ("Ubranie(dmgRed: " + redukcjaObrazen + " energyRed: " + redukcjaZuzyciaEnergii
+                + " infectionDef: " + obronaPrzedZakazeniem+ "/" +maxObronaPrzedZakazeniem+")");
     }
 }
