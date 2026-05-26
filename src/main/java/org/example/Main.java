@@ -3,12 +3,12 @@ package org.example;
 import java.util.concurrent.TimeUnit;
 public class Main {
     public static void main(String[] args) {
-        SrodowiskoSymulacji srodowiskoSymulacji = new SrodowiskoSymulacji(10, 15);
+        SimulationEnvironment simulationEnvironment = new SimulationEnvironment(10, 15);
 
-        for(int i = 0; i <= 10; i++) {
-            srodowiskoSymulacji.krokSymulacji();
+        for(int i = 0; i <= 250; i++) {
+            simulationEnvironment.simulationStep();
             try {
-                TimeUnit.SECONDS.sleep(2);
+                TimeUnit.MILLISECONDS.sleep(1000);
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
