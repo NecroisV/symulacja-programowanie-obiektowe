@@ -73,14 +73,14 @@ public abstract class Agent {
     }
 
     public void die(){
+        this.isAlive = false;
+    }
+
+    public void changeHealthLevel(int amount){
 
     }
 
-    public void changeHealthLevel(int ammount){
-
-    }
-
-    public int calcualteFOV(float lightLevel){
+    public int calculateFOV(float lightLevel){
         return 0;
     }
 

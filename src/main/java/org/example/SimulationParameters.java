@@ -4,14 +4,18 @@ import java.util.Map;
 
 public final class SimulationParameters {
     private static SimulationParameters instance;
-    private int startingSurvivorAmount = 3;
-    private int startingInfectedAmount = 4;
+    private int startingSurvivorAmount = 10;
+    private int startingInfectedAmount = 5;
     private float chanceForWoundAfterBattle;
     private Map<String, Float> moveWeights;
     private int[] startingEqAndWoundChances = new int[]{10, 15};
     private final int simulationSeed = 128;
+
+    //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
-    private final double[] eventChances = new double[]{0.1, 30, 10, 5};
+    private final double[] eventChances = new double[]{0.9, 10, 0, 2};
+    private final int[] eventDuration = new int[]{1, 5}; //min, max
+    private final double earthquakeWallDestroyChance = 0.1;
 
     public SimulationParameters(){
 
@@ -37,11 +41,9 @@ public final class SimulationParameters {
         return startingEqAndWoundChances;
     }
 
-    public int getSimulationSeed(){
-        return simulationSeed;
-    }
+    public int getSimulationSeed(){return simulationSeed;}
 
-    public double[] getEventChances(){
-        return eventChances;
-    }
+    public double[] getEventChances(){return eventChances;}
+    public int[] getEventDuration(){return eventDuration;}
+    public double getEarthquakeWallDestroyChance(){return earthquakeWallDestroyChance;}
 }
