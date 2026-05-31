@@ -31,14 +31,14 @@ public class Space {
     public void createWall(){
         isWall =true;}
 
-    public void destroyWall(){
-    }
-
     public boolean isInSafeZone(){
         return false;
     }
 
     public boolean isItWall(){return isWall;}
+    public void destroyWall(){
+        this.isWall = false;
+    }
 
     public void joinUp(Space given_up){
         up = given_up;

@@ -11,10 +11,9 @@ public class SimulationEnvironment {
     private int actualTick = 0;
     private float lightLevel;
     private TimeOfDay timeOfDay;
-    private SimulationParameters parameters = new SimulationParameters();
+    private SimulationParameters parameters = SimulationParameters.getInstance();
     private DataCollector data;
     private List<SafeZone> zones = new ArrayList<>();
-    private List<RandomEvent> randomEvents = new ArrayList<>();
 
     public SimulationEnvironment(int width, int height){
         createBoard(width, height);
@@ -55,7 +54,7 @@ public class SimulationEnvironment {
                     board[y][0].joinLeft(board[y][x]);
                     board[y][x].joinRight(board[y][0]);
                 }
-                if(random.nextInt(100)>=50) {
+                if(random.nextInt(100)>=70) {
                     board[y][x].createWall();}
             }
 
@@ -154,11 +153,18 @@ public class SimulationEnvironment {
     }
 
     private void deleteDeadAgents(){
-
+        for (int i = 0; i < board.length; i++) {
+            for(int j = 0; j < board[0].length; j++){
+                Space space = board[i][j];
+                if(!space.isItWall()){
+                    space.getAgents().removeIf(agent-> !agent.isItAlive());
+                }
+            }
+        }
     }
 
     private void considerRandomEvent(){
-
+        EventManager.runEventCheck(this.board);
     }
 
     private void showBoard() {
@@ -197,4 +203,7 @@ public class SimulationEnvironment {
         }
     }
 
+    public Space[][] getBoard() {
+        return board;
+    }
 }

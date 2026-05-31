@@ -17,7 +17,7 @@ public class InfectedMemory {
 
     }
 
-    public void overwrite(LightningHit position){
+    public void overwrite(Thunderstorm position){
 
     }
 }
