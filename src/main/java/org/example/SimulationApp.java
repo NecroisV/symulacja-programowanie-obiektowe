@@ -20,6 +20,7 @@ public class SimulationApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         environment = new SimulationEnvironment(BOARD_WIDTH, BOARD_HEIGHT);
+        RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
 
         double canvasWidth = BOARD_WIDTH * TILE_SIZE;
         double canvasHeight = (BOARD_HEIGHT * TILE_SIZE) + LOGS_HEIGHT;
