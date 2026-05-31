@@ -2,6 +2,15 @@ plugins {
     id 'application'
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
 application {
     mainClass = 'org.example.Main'
 }
