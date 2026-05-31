@@ -20,10 +20,8 @@ public class SimulationEnvironment {
     private int actualTick = 0;
     private float lightLevel;
     private TimeOfDay timeOfDay;
-    private final SimulationParameters parameters = new SimulationParameters();
-
+    private SimulationParameters parameters = SimulationParameters.getInstance();
     private DataCollector data = new DataCollector();
-
     private List<SafeZone> zones = new ArrayList<>();
     private List<RandomEvent> randomEvents = new ArrayList<>();
     private final List<String> turnLogs = new ArrayList<>();
@@ -281,6 +279,7 @@ public class SimulationEnvironment {
     }
 
     private void considerRandomEvent(){
+        EventManager.runEventCheck(this.board);
         // data.incHealedWoundInSafeZones();
     }
 
@@ -411,5 +410,9 @@ public class SimulationEnvironment {
             gc.setFill(Color.LIGHTGREEN);
             gc.fillText("Status ludzkości: Aktywni", statsStartX, panelStartY + 89);
         }
+    }
+
+    public Space[][] getBoard() {
+        return board;
     }
 }

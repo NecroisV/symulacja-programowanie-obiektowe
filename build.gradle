@@ -1,5 +1,18 @@
 plugins {
-    id 'java'
+    id 'application'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+application {
+    mainClass = 'org.example.Main'
 }
 
 group = 'org.example'
@@ -9,7 +22,7 @@ repositories {
     mavenCentral()
 }
 
-// Automatyczne wykrywanie systemu operacyjnego (Brak zależności od zewnętrznych wtyczek)
+
 String osName = System.getProperty("os.name").toLowerCase()
 String currentPlatform = "linux"
 if (osName.contains("win")) {
@@ -19,10 +32,9 @@ if (osName.contains("win")) {
 }
 
 dependencies {
-    // NOWOŚĆ: Jawnie dodajemy moduł bazowy, który zawiera brakujący EventTarget
+
     implementation "org.openjfx:javafx-base:23:${currentPlatform}"
 
-    // Twoje dotychczasowe zależności JavaFX
     implementation "org.openjfx:javafx-controls:23:${currentPlatform}"
     implementation "org.openjfx:javafx-graphics:23:${currentPlatform}"
 
