@@ -1,7 +1,35 @@
 plugins {
-    id 'application'
+    id 'java'
 }
 
-application {
-    mainClass = 'org.example.Main'
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+// Automatyczne wykrywanie systemu operacyjnego (Brak zależności od zewnętrznych wtyczek)
+String osName = System.getProperty("os.name").toLowerCase()
+String currentPlatform = "linux"
+if (osName.contains("win")) {
+    currentPlatform = "win"
+} else if (osName.contains("mac")) {
+    currentPlatform = "mac"
+}
+
+dependencies {
+    // NOWOŚĆ: Jawnie dodajemy moduł bazowy, który zawiera brakujący EventTarget
+    implementation "org.openjfx:javafx-base:23:${currentPlatform}"
+
+    // Twoje dotychczasowe zależności JavaFX
+    implementation "org.openjfx:javafx-controls:23:${currentPlatform}"
+    implementation "org.openjfx:javafx-graphics:23:${currentPlatform}"
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
 }
