@@ -73,19 +73,17 @@ public class Survivor extends Agent {
         List<Space> seenResources = thingsAgentSaw.get(0);
         List<Space> seenAgents = thingsAgentSaw.get(1);
 
-        for (int y = 0; y < board.length; y++) {
-            for (int x = 0; x < board[y].length; x++) {
-                Space space = board[y][x];
+        for (Space[] value : board) {
+            for (Space space : value) {
                 if (space != null) {
-                    space.changeWeight(-space.getWeigth());
+                    space.changeWeight(-space.getWeight());
                     space.changeWeight(1);
                 }
             }
         }
 
-        for (int y = 0; y < board.length; y++) {
-            for (int x = 0; x < board[y].length; x++) {
-                Space space = board[y][x];
+        for (Space[] spaces : board) {
+            for (Space space : spaces) {
                 if (space == null || space.isItWall()) continue;
 
                 if (space.isInSafeZone()) {
@@ -104,8 +102,7 @@ public class Survivor extends Agent {
                             int finalInfectedWeight = Math.min(0, baseFear + fearReduction);
 
                             addWeightWithSpill(space, finalInfectedWeight, weightDivisor);
-                        }
-                        else if (a instanceof Survivor && a != this) {
+                        } else if (a instanceof Survivor && a != this) {
                             int baseSurvivorWeight = baseWeights.getOrDefault("survivorSurvivor", -20);
                             if (currentEnergy < 40) {
                                 baseSurvivorWeight += (currentEnergy) * 2;

@@ -5,8 +5,8 @@ import java.util.Map;
 
 public class SimulationParameters {
     private static SimulationParameters instance;
-    private int startingSurvivorAmount = 3;
-    private int startingInfectedAmount = 4;
+    private int startingSurvivorAmount = 200;
+    private int startingInfectedAmount = 700;
     private float chanceForWoundAfterBattle;
     private Map<String, Integer> moveWeights;
     private int[] startingEqAndWoundChances = new int[]{10, 15};
@@ -16,7 +16,7 @@ public class SimulationParameters {
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
     private final double[] eventChances = new double[]{0.9, 10, 0, 2};
     private final int[] eventDuration = new int[]{1, 5}; //min, max
-    private final double earthquakeWallDestroyChance = 0.1;
+    private final double earthquakeWallDestroyChance = 0.04;
 
     public SimulationParameters() {
         moveWeights = new HashMap<>();
@@ -26,7 +26,7 @@ public class SimulationParameters {
     private void loadDefaultWeights() {
         moveWeights.put("infectedCurrentSeenSurvivor", 100);
         moveWeights.put("infectedMemory", 25);
-        moveWeights.put("infectedCloseInfected", 5);
+        moveWeights.put("infectedCloseInfected", 15);
 
         moveWeights.put("survivorInfected", -100);
         moveWeights.put("survivorSafeZone", 80);

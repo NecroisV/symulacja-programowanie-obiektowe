@@ -29,19 +29,17 @@ public class Infected extends Agent {
         ArrayList<ArrayList<Space>> thingsAgentSaw = this.whatAgentSaw(start);
         List<Space> seenAgents = thingsAgentSaw.get(1);
 
-        for (int y = 0; y < board.length; y++) {
-            for (int x = 0; x < board[y].length; x++) {
-                Space space = board[y][x];
+        for (Space[] spaces : board) {
+            for (Space space : spaces) {
                 if (space != null) {
-                    space.changeWeight(-space.getWeigth());
+                    space.changeWeight(-space.getWeight());
                     space.changeWeight(1);
                 }
             }
         }
 
-        for (int y = 0; y < board.length; y++) {
-            for (int x = 0; x < board[y].length; x++) {
-                Space space = board[y][x];
+        for (Space[] spaces : board) {
+            for (Space space : spaces) {
                 if (space == null || space.isItWall()) continue;
 
                 if (seenAgents.contains(space)) {
@@ -54,10 +52,9 @@ public class Infected extends Agent {
                                 this.memory.updateLastKnownPosition(space);
                             }
                             */
-                        }
-                        else if (a instanceof Infected && a != this) {
+                        } else if (a instanceof Infected && a != this) {
                             addWeightWithSpill(space, baseWeights.getOrDefault("infectedCloseInfected", 5), weightDivisor);
-                            space.changeWeight(-space.getWeigth());
+                            space.changeWeight(-space.getWeight());
                         }
                     }
                 }
@@ -72,11 +69,10 @@ public class Infected extends Agent {
             }
         }
 
-        for (int y = 0; y < board.length; y++) {
-            for (int x = 0; x < board[y].length; x++) {
-                Space space = board[y][x];
+        for (Space[] spaces : board) {
+            for (Space space : spaces) {
                 if (space != null && space.isInSafeZone()) {
-                    space.changeWeight(-space.getWeigth());
+                    space.changeWeight(-space.getWeight());
                 }
             }
         }

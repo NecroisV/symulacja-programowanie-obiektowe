@@ -36,14 +36,18 @@ public abstract class Agent {
         List<Integer> validWeights = new ArrayList<>();
 
         for (Space s : availableSpaces) {
-            int w = Math.max(0, s.getWeigth());
+            int w = Math.max(0, s.getWeight());
             validWeights.add(w);
             totalWeightSum += w;
         }
 
         if (totalWeightSum == 0) {
-            Space bestWorst = availableSpaces.get(0);
-            for(Space s : availableSpaces) if(s.getWeigth() > bestWorst.getWeigth()) bestWorst = s;
+            Space bestWorst = availableSpaces.getFirst();
+            for(Space s : availableSpaces){
+                if(s.getWeight() > bestWorst.getWeight()) {
+                    bestWorst = s;
+                }
+            }
             return bestWorst.getPosition();
         }
 
@@ -52,9 +56,11 @@ public abstract class Agent {
         int currentSum = 0;
         for (int i = 0; i < availableSpaces.size(); i++) {
             currentSum += validWeights.get(i);
-            if (rolledValue < currentSum) return availableSpaces.get(i).getPosition();
+            if (rolledValue < currentSum) {
+                return availableSpaces.get(i).getPosition();
+            }
         }
-        return availableSpaces.get(availableSpaces.size() - 1).getPosition();
+        return availableSpaces.getLast().getPosition();
     }
 
     protected void addWeightWithSpill(Space s, int weight, int divisor) {
@@ -63,7 +69,11 @@ public abstract class Agent {
         if (divisor <= 1) return;
         int spilled = weight / divisor;
         Space[] n = {s.getUp(), s.getRight(), s.getDown(), s.getLeft()};
-        for (Space neighbor : n) if (neighbor != null && !neighbor.isItWall()) neighbor.changeWeight(spilled);
+        for (Space neighbor : n){
+            if (neighbor != null && !neighbor.isItWall()){
+                neighbor.changeWeight(spilled);
+            }
+        }
     }
 
     private ArrayList<Space> possibleMove(Space start) {
@@ -224,7 +234,7 @@ public abstract class Agent {
 
     public int calculateStrength(){
         if(this instanceof Survivor){
-            return 30;
+            return 10;
         }
         else{
             return 5;

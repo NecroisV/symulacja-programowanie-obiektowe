@@ -75,7 +75,7 @@ public class Space {
         weigth += change;
     }
 
-    public int getWeigth(){
+    public int getWeight(){
         return weigth;
     }
 
