@@ -5,14 +5,14 @@ import java.util.Map;
 
 public class SimulationParameters {
     private static SimulationParameters instance;
-    private int startingSurvivorAmount = 200;
-    private int startingInfectedAmount = 700;
+    private int startingSurvivorAmount = 1500;
+    private int startingInfectedAmount = 5000;
     private float chanceForWoundAfterBattle;
     private Map<String, Integer> moveWeights;
     private int[] startingEqAndWoundChances = new int[]{10, 15};
     private final int simulationSeed = 128;
-    private int weaponCount = 5;
-    private int clothesCount = 5;
+    private int weaponCount = 800;
+    private int clothesCount = 800;
 
     //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
@@ -32,10 +32,9 @@ public class SimulationParameters {
 
         moveWeights.put("survivorInfected", -100);
         moveWeights.put("survivorSafeZone", 80);
-        moveWeights.put("survivorWeapon", 50);
         moveWeights.put("survivorResource", 50);
         moveWeights.put("survivorSurvivor", -125);
-        moveWeights.put("survivorClothes", 50);
+        moveWeights.put("survivorEquipment", 50);
 
     }
     //Ze wzorca projektowego Singleton

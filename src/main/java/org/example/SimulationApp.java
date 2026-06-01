@@ -10,10 +10,10 @@ import javafx.stage.Stage;
 
 public class SimulationApp extends Application {
 
-    private static final int BOARD_WIDTH = 300;
-    private static final int BOARD_HEIGHT = 150;
-    private static final double TILE_SIZE = 8.0;
-    private static final double LOGS_HEIGHT = 160.0;
+    private static final int BOARD_WIDTH = 700;
+    private static final int BOARD_HEIGHT = 500;
+    private static final double TILE_SIZE = 2.0;
+    private static final double LOGS_HEIGHT = 200.0;
 
     private SimulationEnvironment environment;
 

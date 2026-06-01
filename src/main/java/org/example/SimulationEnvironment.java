@@ -1,11 +1,6 @@
 package org.example;
 
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
-import javafx.geometry.VPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +40,8 @@ public class SimulationEnvironment {
         updateTimeOfDay();
 
         data.updateData(this);
-
-        render(gc, tileSize);
+        Render render = new Render();
+        render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board);
     }
 
     public List<Agent> getAgentList() { return agentList; }
@@ -105,7 +100,7 @@ public class SimulationEnvironment {
             int y = RNG.nextInt(height -1);
 
             if (!board[y][x].isItWall()){
-                Survivor survivor = new Survivor(x, y, health, board);
+                Survivor survivor = new Survivor(x, y, health);
                 agentList.add(survivor);
                 board[y][x].addAgent(survivor);
                 i ++;
@@ -118,7 +113,7 @@ public class SimulationEnvironment {
             int y = RNG.nextInt(height -1);
 
             if (!board[y][x].isItWall()){
-                Infected infected = new Infected(x, y, health, board);
+                Infected infected = new Infected(x, y, health);
                 agentList.add(infected);
                 board[y][x].addAgent(infected);
                 i ++;
@@ -170,97 +165,111 @@ public class SimulationEnvironment {
             for (int x = 0; x < width; x++) {
                 Space space = board[y][x];
 
-                if (space != null && !space.isItWall() && space.getAgents().size() > 1) {
+                if (space != null && !space.isItWall()) {
+                    if (space.getAgents().size() > 1) {
+                        List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
+                        List<Survivor> survivors = new ArrayList<>();
+                        List<Infected> infected = new ArrayList<>();
+
+                        for (Agent a : agentsOnSpace) {
+                            if (a.isItAlive()) {
+                                if (a instanceof Survivor) survivors.add((Survivor) a);
+                                else if (a instanceof Infected) infected.add((Infected) a);
+                            }
+                        }
+
+                        if (infected.isEmpty() && survivors.size() > 1) {
+                            data.incSurvivorSurvivorInteractions();
+
+                            while (survivors.size() > 1) {
+                                Survivor s1 = survivors.get(0);
+                                Survivor s2 = survivors.get(1);
+
+                                int s1Weight = Math.max(1, s1.calculateStrength());
+                                int s2Weight = Math.max(1, s2.calculateStrength());
+                                int totalWeight = s1Weight + s2Weight;
+
+                                int roll = RNG.nextInt(totalWeight);
+
+                                if (roll < s1Weight) {
+                                    int damage = Math.max(5, s1Weight - (s2Weight / 2));
+                                    s2.changeHealthLevel(-damage);
+                                } else {
+                                    int damage = Math.max(5, s2Weight - (s1Weight / 2));
+                                    s1.changeHealthLevel(-damage);
+                                }
+
+                                if (!s2.isItAlive() || s2.getHealth() <= 0) {
+                                    turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
+                                    s1.steal(s2);
+                                    s2.die();
+                                    space.deleteAgent(s2);
+                                    survivors.remove(s2);
+                                } else if (!s1.isItAlive() || s1.getHealth() <= 0) {
+                                    turnLogs.add("⚔calały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
+                                    s2.steal(s1);
+                                    s1.die();
+                                    space.deleteAgent(s1);
+                                    survivors.remove(s1);
+                                }
+                            }
+                        }
+
+
+                        if (!survivors.isEmpty() && !infected.isEmpty()) {
+                            data.incSurvivorInfectedInteractions();
+
+                            while (!survivors.isEmpty() && !infected.isEmpty()) {
+                                Survivor survivor = survivors.getFirst();
+                                Infected zakazony = infected.getFirst();
+
+                                int zakazonyWeight = Math.max(1, zakazony.calculateStrength());
+                                int survivorWeight = Math.max(1, survivor.calculateStrength());
+                                int totalWeight = zakazonyWeight + survivorWeight;
+
+                                int roll = RNG.nextInt(totalWeight);
+
+                                if (roll < zakazonyWeight) {
+                                    int damage = Math.max(5, zakazonyWeight - (survivorWeight / 2));
+                                    survivor.changeHealthLevel(-damage);
+                                    if (RNG.nextFloat() < zakazony.getInfectionChance()) {
+                                        transformSurvivor(survivor, zakazony, x, y);
+                                    }
+                                } else {
+                                    int damage = Math.max(5, survivorWeight - (zakazonyWeight / 2));
+                                    zakazony.changeHealthLevel(-damage);
+                                }
+
+                                if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
+                                    turnLogs.add("Zakażony na pozycji [" + x + ", " + y + "] został permanentnie zlikwidowany!");
+                                    zakazony.die();
+                                    space.deleteAgent(zakazony);
+                                    infected.remove(zakazony);
+                                }
+
+                                if (!survivor.isItAlive() || survivor.getHealth() <= 0) {
+                                    turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] poległ w walce i zmarł.");
+                                    survivor.die();
+                                    space.deleteAgent(survivor);
+                                    survivors.remove(survivor);
+                                }
+                            }
+                        }
+                    }
+
                     List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
                     List<Survivor> survivors = new ArrayList<>();
-                    List<Infected> infected = new ArrayList<>();
 
                     for (Agent a : agentsOnSpace) {
                         if (a.isItAlive()) {
                             if (a instanceof Survivor) survivors.add((Survivor) a);
-                            else if (a instanceof Infected) infected.add((Infected) a);
                         }
                     }
 
-                    if (infected.isEmpty() && survivors.size() > 1) {
-                        data.incSurvivorSurvivorInteractions();
-
-                        while (survivors.size() > 1) {
-                            Survivor s1 = survivors.get(0);
-                            Survivor s2 = survivors.get(1);
-
-                            int s1Weight = Math.max(1, s1.calculateStrength());
-                            int s2Weight = Math.max(1, s2.calculateStrength());
-                            int totalWeight = s1Weight + s2Weight;
-
-                            int roll = RNG.nextInt(totalWeight);
-
-                            if (roll < s1Weight) {
-                                int damage = Math.max(5, s1Weight - (s2Weight / 2));
-                                s2.changeHealthLevel(-damage);
-                            } else {
-                                int damage = Math.max(5, s2Weight - (s1Weight / 2));
-                                s1.changeHealthLevel(-damage);
-                            }
-
-                            if (!s2.isItAlive() || s2.getHealth() <= 0) {
-                                turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
-                                s1.steal(s2);
-                                s2.die();
-                                space.deleteAgent(s2);
-                                survivors.remove(s2);
-                            }
-                            else if (!s1.isItAlive() || s1.getHealth() <= 0) {
-                                turnLogs.add("⚔calały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
-                                s2.steal(s1);
-                                s1.die();
-                                space.deleteAgent(s1);
-                                survivors.remove(s1);
-                            }
-                        }
-                    }
-
-                    if (!survivors.isEmpty() && !infected.isEmpty()) {
-                        data.incSurvivorInfectedInteractions();
-
-                        while (!survivors.isEmpty() && !infected.isEmpty()) {
-                            Survivor survivor = survivors.getFirst();
-                            Infected zakazony = infected.getFirst();
-
-                            int zakazonyWeight = Math.max(1, zakazony.calculateStrength());
-                            int survivorWeight = Math.max(1, survivor.calculateStrength());
-                            int totalWeight = zakazonyWeight + survivorWeight;
-
-                            int roll = RNG.nextInt(totalWeight);
-
-                            if (roll < zakazonyWeight) {
-                                int damage = Math.max(5, zakazonyWeight - (survivorWeight / 2));
-                                survivor.changeHealthLevel(-damage);
-                                if (RNG.nextFloat() < zakazony.getInfectionChance()) {
-                                    transformSurvivor(survivor, zakazony, x, y);
-                                }
-                            } else {
-                                int damage = Math.max(5, survivorWeight - (zakazonyWeight / 2));
-                                zakazony.changeHealthLevel(-damage);
-                            }
-
-                            if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
-                                turnLogs.add("Zakażony na pozycji [" + x + ", " + y + "] został permanentnie zlikwidowany!");
-                                zakazony.die();
-                                space.deleteAgent(zakazony);
-                                infected.remove(zakazony);
-                            }
-
-                            if (!survivor.isItAlive() || survivor.getHealth() <= 0) {
-                                turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] poległ w walce i zmarł.");
-                                survivor.die();
-                                space.deleteAgent(survivor);
-                                survivors.remove(survivor);
-                            }
-                        }
-                    }
                     if(!survivors.isEmpty() && space.hasEquipment()) {
                         survivors.getFirst().pickUpEquipment(space);
+                        int[] position = space.getPosition();
+                        turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] podniósł ekwipunek");
                     }
                 }
             }
@@ -286,150 +295,17 @@ public class SimulationEnvironment {
         // data.incHealedWoundInSafeZones();
     }
 
-    private void render(GraphicsContext gc, double tileSize) {
-        int width = board[0].length;
-        int height = board.length;
-
-        gc.setFill(Color.web("#1e1e24"));
-        gc.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.setTextBaseline(VPos.CENTER);
-        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, tileSize * 0.5));
-
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                double x = j * tileSize;
-                double y = i * tileSize;
-                Space space = board[i][j];
-
-                if (space.isItWall()) {
-                    gc.setFill(Color.web("#ff7e21"));
-                    gc.fillRect(x, y, tileSize - 1, tileSize - 1);
-                    gc.setFill(Color.web("#6c757d"));
-                } else if (space.hasEquipment()) {
-                    gc.setFill(Color.RED);
-                    gc.fillRect(x, y, tileSize - 2, tileSize - 2);
-                    gc.setFill(Color.BLACK);
-                    gc.fillText("E", x + tileSize / 2, y + tileSize / 2);
-                } else {
-                    gc.setFill(Color.web("#2d2d35"));
-                    gc.fillRect(x, y, tileSize - 1, tileSize - 1);
-
-                    List<Agent> agentsOnSpace = space.getAgents();
-                    if (!agentsOnSpace.isEmpty()) {
-                        double circleRadius = tileSize * 0.8;
-                        double offset = (tileSize - circleRadius) / 2;
-
-                        if (agentsOnSpace.size() > 1) {
-                            gc.setFill(Color.web("#d90429"));
-                            gc.fillOval(x + offset, y + offset, circleRadius, circleRadius);
-                            gc.setFill(Color.WHITE);
-                            gc.fillText("X", x + tileSize / 2, y + tileSize / 2);
-                        } else {
-                            Agent a = agentsOnSpace.getFirst();
-                            if (a instanceof Survivor) {
-                                gc.setFill(Color.web("#00b4d8"));
-                                gc.fillOval(x + offset, y + offset, circleRadius, circleRadius);
-                                gc.setFill(Color.WHITE);
-                                gc.fillText("S", x + tileSize / 2, y + tileSize / 2);
-                            } else if (a instanceof Infected) {
-                                gc.setFill(Color.web("#38b000"));
-                                gc.fillOval(x + offset, y + offset, circleRadius, circleRadius);
-                                gc.setFill(Color.WHITE);
-                                gc.fillText("Z", x + tileSize / 2, y + tileSize / 2);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        double panelStartY = height * tileSize + 20;
-
-        gc.setTextAlign(TextAlignment.LEFT);
-        gc.setTextBaseline(VPos.TOP);
-        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 16));
-        gc.setFill(Color.WHITE);
-        gc.fillText("TICK: " + actualTick, 15, panelStartY);
-
-        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
-        gc.fillText("OSTATNIE WYDARZENIA:", 15, panelStartY + 30);
-
-        double logY = panelStartY + 55;
-        gc.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
-        if (turnLogs.isEmpty()) {
-            gc.setFill(Color.LIGHTGREEN);
-            gc.fillText("Brak wydarzeń w tej turze.", 20, logY);
-        } else {
-            gc.setFill(Color.web("#ffb703"));
-            int displayedLogs = 0;
-            for (String log : turnLogs) {
-                if (displayedLogs >= 5) break;
-                gc.fillText("• " + log, 20, logY);
-                logY += 18;
-                displayedLogs++;
-            }
-        }
-        turnLogs.clear();
-
-        double statsStartX = Math.max(380, width * tileSize * 0.55);
-
-        gc.setFill(Color.web("#25252d"));
-        gc.fillRect(statsStartX - 10, panelStartY, 320, 150);
-
-        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
-        gc.setFill(Color.web("#00b4d8"));
-        gc.fillText("LIVE STATS 1", statsStartX, panelStartY + 10);
-
-        gc.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
-        gc.setFill(Color.WHITE);
-
-
-        gc.fillText("Ocalali (S): " + data.getSurvivorAmount(), statsStartX, panelStartY + 35);
-        gc.fillText("Zakażeni (Z): " + data.getInfectedAmount(), statsStartX, panelStartY + 53);
-
-
-        gc.fillText("Walka S - Z: " + data.getSurvivorInfectedInteractions(), statsStartX, panelStartY + 71);
-        gc.fillText("Walka S - S: " + data.getSurvivorSurvivorInteractions(), statsStartX, panelStartY + 89);
-
-
-
-        statsStartX += 350;
-        gc.setFill(Color.web("#25252d"));
-        gc.fillRect(statsStartX - 10, panelStartY, 320, 150);
-
-        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
-        gc.setFill(Color.web("#00b4d8"));
-        gc.fillText("LIVE STATS 2", statsStartX, panelStartY + 10);
-
-        gc.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
-        gc.setFill(Color.WHITE);
-
-
-        gc.fillText("Średnie zdrowie: " + String.format("%.1f", data.getMeanHealth()) + " HP", statsStartX, panelStartY + 35);
-        gc.fillText("Uleczenia w SafeZone: " + data.getHealedWoundInSafeZones(), statsStartX, panelStartY + 53);
-
-        if (data.getTimeToSurvivorsExtinction() != -1) {
-            gc.setFill(Color.web("#d90429"));
-            gc.fillText("Zagłada ocalałych w turze: " + data.getTimeToSurvivorsExtinction(), statsStartX, panelStartY + 71);
-        } else {
-            gc.setFill(Color.LIGHTGREEN);
-            gc.fillText("Status ocalałych: Aktywni", statsStartX, panelStartY + 89);
-        }
-
-    }
     private void spawnEquipmentOnBoard() {
         int weaponCount = parameters.getWeaponCount();
         int clothesCount = parameters.getClothesCount();
         equipmentSpawnStrategy.spawnEquipment(board, weaponCount, clothesCount);
     }
     private void spawnItems(List<Space> freeSpaces, int count,
-                            EquipmentFactory.EquipmentType type, Random random) {
+                            EquipmentFactory.EquipmentType type){
         int spawned = 0;
         int attempts = 0;
         while (spawned < count && attempts < freeSpaces.size()) {
-            Space space = freeSpaces.get(random.nextInt(freeSpaces.size()));
+            Space space = freeSpaces.get(RNG.nextInt(freeSpaces.size()));
             if (!space.hasEquipment()) {
                 space.addEquipment(EquipmentFactory.createRandom(type));
                 spawned++;
@@ -446,9 +322,8 @@ public class SimulationEnvironment {
                 }
             }
         }
-        Random random = new Random();
-        spawnItems(freeSpaces, weaponCount, EquipmentFactory.EquipmentType.WEAPON, random);
-        spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES, random);
+        spawnItems(freeSpaces, weaponCount, EquipmentFactory.EquipmentType.WEAPON);
+        spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES);
     }
 
     public Space[][] getBoard() {
