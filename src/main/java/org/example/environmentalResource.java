@@ -11,8 +11,12 @@ public class environmentalResource {
 
     }
 
-    public void wasUsed(){
+    public void getUsed(){
 
+    }
+
+    public boolean wasUsed(){
+        return isUsed;
     }
 
     public void updateTime(){

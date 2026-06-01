@@ -12,7 +12,7 @@ public class Clothes extends Equipment
         this.damageReduction = damageReduction;
         this.energyUseReduction = energyUseReduction;
         this.infectionPrevention = infectionPrevention;
-        this.maxInfectionPrevention = maxInfectionPrevention; //wartosc wejsciowa do zapamietania
+        this.maxInfectionPrevention = maxInfectionPrevention;
     }
 
     public int calculateDamageReduction()

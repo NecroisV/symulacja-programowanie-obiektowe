@@ -16,21 +16,15 @@ public class Space {
     private Space down;
     private Space left;
 
+    private int weigth = 1;
+
     public Space(int given_x, int given_y){
         x = given_x;
         y = given_y;
     }
 
-    public float calculateSurvivorWeight(Survivor o){
-        return 0.0f;
-    }
-
-    public float calculateInfectedWeight(Infected z){
-        return 0.0f;
-    }
-
     public void createWall(){
-        isWall =true;}
+        isWall = true;}
 
     public boolean isInSafeZone(){
         return false;
@@ -69,6 +63,22 @@ public class Space {
     public Space getRight(){return right;}
     public Space getDown(){return down;}
     public Space getLeft(){return left;}
+
+    public boolean containsResource(){
+        return resource != null && !resource.wasUsed();
+    }
+
+    public boolean containsAgents(){
+        return !agents.isEmpty();
+    }
+
+    public void changeWeight(int change){
+        weigth += change;
+    }
+
+    public int getWeight(){
+        return weigth;
+    }
 
     public void addEquipment(Equipment equipment) {
         equipmentOnGround.add(equipment);

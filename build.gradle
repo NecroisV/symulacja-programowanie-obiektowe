@@ -14,3 +14,34 @@ java {
 application {
     mainClass = 'org.example.Main'
 }
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+
+String osName = System.getProperty("os.name").toLowerCase()
+String currentPlatform = "linux"
+if (osName.contains("win")) {
+    currentPlatform = "win"
+} else if (osName.contains("mac")) {
+    currentPlatform = "mac"
+}
+
+dependencies {
+
+    implementation "org.openjfx:javafx-base:23:${currentPlatform}"
+
+    implementation "org.openjfx:javafx-controls:23:${currentPlatform}"
+    implementation "org.openjfx:javafx-graphics:23:${currentPlatform}"
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
