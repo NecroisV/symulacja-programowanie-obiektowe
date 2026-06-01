@@ -24,12 +24,15 @@ public class SimulationEnvironment {
     private List<SafeZone> zones = new ArrayList<>();
     private final List<String> turnLogs = new ArrayList<>();
 
+    private EquipmentSpawnStrategy equipmentSpawnStrategy;
 
     public SimulationEnvironment(int width, int height){
+        this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
         createBoard(width, height);
         int[] agentNumbers = parameters.getAgentsAmount();
         int[] chances = parameters.getEqAndWoundChances();
         createAgents(agentNumbers[0], agentNumbers[1], chances[0], chances[1]);
+        spawnEquipmentOnBoard();
 
         data.updateData(this);
     }
@@ -151,9 +154,11 @@ public class SimulationEnvironment {
     private void displaceAgent(int[] originalSpace, int[] targetSpace, Agent a){
         int originalY = originalSpace[0];
         int originalX = originalSpace[1];
+
         int targetX = targetSpace[0];
         int targetY = targetSpace[1];
         board[targetY][targetX].addAgent(a);
+
         board[originalY][originalX].deleteAgent(a);
     }
 
@@ -254,6 +259,9 @@ public class SimulationEnvironment {
                             }
                         }
                     }
+                    if(!survivors.isEmpty() && space.hasEquipment()) {
+                        survivors.getFirst().pickUpEquipment(space);
+                    }
                 }
             }
         }
@@ -299,6 +307,11 @@ public class SimulationEnvironment {
                     gc.setFill(Color.web("#ff7e21"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
                     gc.setFill(Color.web("#6c757d"));
+                } else if (space.hasEquipment()) {
+                    gc.setFill(Color.RED);
+                    gc.fillRect(x, y, tileSize - 2, tileSize - 2);
+                    gc.setFill(Color.BLACK);
+                    gc.fillText("E", x + tileSize / 2, y + tileSize / 2);
                 } else {
                     gc.setFill(Color.web("#2d2d35"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
@@ -404,9 +417,42 @@ public class SimulationEnvironment {
             gc.setFill(Color.LIGHTGREEN);
             gc.fillText("Status ocalałych: Aktywni", statsStartX, panelStartY + 89);
         }
+
+    }
+    private void spawnEquipmentOnBoard() {
+        int weaponCount = parameters.getWeaponCount();
+        int clothesCount = parameters.getClothesCount();
+        equipmentSpawnStrategy.spawnEquipment(board, weaponCount, clothesCount);
+    }
+    private void spawnItems(List<Space> freeSpaces, int count,
+                            EquipmentFactory.EquipmentType type, Random random) {
+        int spawned = 0;
+        int attempts = 0;
+        while (spawned < count && attempts < freeSpaces.size()) {
+            Space space = freeSpaces.get(random.nextInt(freeSpaces.size()));
+            if (!space.hasEquipment()) {
+                space.addEquipment(EquipmentFactory.createRandom(type));
+                spawned++;
+            }
+            attempts++;
+        }
+    }
+    private void spawnEquipmentRandomly(Space[][] board, int weaponCount, int clothesCount) {
+        List<Space> freeSpaces = new ArrayList<>();
+        for (Space[] row : board) {
+            for (Space space : row) {
+                if (!space.isItWall()) {
+                    freeSpaces.add(space);
+                }
+            }
+        }
+        Random random = new Random();
+        spawnItems(freeSpaces, weaponCount, EquipmentFactory.EquipmentType.WEAPON, random);
+        spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES, random);
     }
 
     public Space[][] getBoard() {
         return board;
     }
 }
+

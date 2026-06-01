@@ -9,6 +9,7 @@ public class Space {
     private boolean isWall;
     private environmentalResource resource;
     private List<Agent> agents = new ArrayList<>();
+    private List<Equipment> equipmentOnGround = new ArrayList<>();
 
     private Space up;
     private Space right;
@@ -79,4 +80,22 @@ public class Space {
         return weigth;
     }
 
+    public void addEquipment(Equipment equipment) {
+        equipmentOnGround.add(equipment);
+    }
+
+    public boolean hasEquipment() {
+        return !equipmentOnGround.isEmpty();
+    }
+
+    public Equipment pickUpEquipment() {
+        if (!equipmentOnGround.isEmpty()) {
+            return equipmentOnGround.removeFirst();
+        }
+        return null;
+    }
+
+    public List<Equipment> getEquipmentOnGround() {
+        return equipmentOnGround;
+    }
 }

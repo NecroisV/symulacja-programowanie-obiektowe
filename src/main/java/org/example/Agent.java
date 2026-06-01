@@ -15,6 +15,8 @@ public abstract class Agent {
     private int baseSpeed = 2;
     private boolean isAlive = true;
     private List<Wound> wounds;
+    private int weaponCapacity = 1;
+    private int clothesCapacity = 1;
     protected Space[][] copiedBoard;
 
     protected Agent(int given_x, int given_y, int given_health, Space[][] board){
@@ -254,12 +256,52 @@ public abstract class Agent {
     public int getHealth(){return healthLevel;}
 
     public void reviveWound(){
+    }
+    private List<Equipment> equipment = new ArrayList<>();
 
+    public <T extends Equipment> List<T> getEquipmentOfType(Class<T> type) {
+        return equipment.stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public boolean pickUpEquipment(Space space) {
+        Equipment item = space.pickUpEquipment();
+        if (item == null) return false;
+
+        if (item instanceof Weapon && getEquipmentOfType(Weapon.class).size() >= weaponCapacity) {
+            space.addEquipment(item);
+            return false;
+        }
+        if (item instanceof Clothes && getEquipmentOfType(Clothes.class).size() >= clothesCapacity) {
+            space.addEquipment(item);
+            return false;
+        }
+
+        equipment.add(item);
+        return true;
+    }
+
+    public boolean hasSpaceInInventory(Equipment item) {
+        if (item instanceof Weapon) {
+            return getEquipmentOfType(Weapon.class).size() < weaponCapacity;
+        }
+        if (item instanceof Clothes) {
+            return getEquipmentOfType(Clothes.class).size() < clothesCapacity;
+        }
+        return false;
     }
 
     public Space[][] getBoard(){
         return copiedBoard;
     }
+
+    public List<Equipment> getEquipment() {
+        return equipment;
+    }
+
+}
 
     public void getAgentWeights(Space start) {}
 }
