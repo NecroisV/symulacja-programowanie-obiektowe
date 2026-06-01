@@ -10,6 +10,8 @@ public final class SimulationParameters {
     private Map<String, Float> moveWeights;
     private int[] startingEqAndWoundChances = new int[]{10, 15};
     private final int simulationSeed = 128;
+    private int weaponCount = 5;
+    private int clothesCount = 5;
 
     //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
@@ -46,4 +48,6 @@ public final class SimulationParameters {
     public double[] getEventChances(){return eventChances;}
     public int[] getEventDuration(){return eventDuration;}
     public double getEarthquakeWallDestroyChance(){return earthquakeWallDestroyChance;}
+    public int getWeaponCount() { return weaponCount; }
+    public int getClothesCount() { return clothesCount; }
 }

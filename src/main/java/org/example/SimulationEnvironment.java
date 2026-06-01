@@ -14,12 +14,15 @@ public class SimulationEnvironment {
     private SimulationParameters parameters = SimulationParameters.getInstance();
     private DataCollector data;
     private List<SafeZone> zones = new ArrayList<>();
+    private EquipmentSpawnStrategy equipmentSpawnStrategy;
 
     public SimulationEnvironment(int width, int height){
+        this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
         createBoard(width, height);
         int[] agentNumbers = parameters.getAgentsAmount();
         int[] chances = parameters.getEqAndWoundChances();
         createAgents(agentNumbers[0], agentNumbers[1], chances[0], chances[1]);
+        spawnEquipmentOnBoard();
     }
 
     public void simulationStep(){
@@ -126,6 +129,11 @@ public class SimulationEnvironment {
                             usedAgentList.add(a);
                             int[] agentMove = a.makeMove(board[i][j]);
                             displaceAgent(new int[]{i, j}, agentMove, a);
+                            int newX = agentMove[0];
+                            int newY = agentMove[1];
+                            if(a instanceof Survivor && board[newY][newX].hasEquipment()) {
+                                a.pickUpEquipment(board[newY][newX]);
+                            }
                         }
                     }
                 }
@@ -184,7 +192,12 @@ public class SimulationEnvironment {
                 } else {
                     List<Agent> agentsOnSpace = space.getAgents();
                     if (agentsOnSpace.isEmpty()) {
-                        System.out.print(". ");
+                        if(space.hasEquipment()) {
+                            System.out.print("E ");
+                        }
+                        else {
+                            System.out.print(". ");
+                        }
                     } else if (agentsOnSpace.size() > 1) {
                         System.out.print(agentsOnSpace.size() + " ");
                     } else {
@@ -201,9 +214,42 @@ public class SimulationEnvironment {
             }
             System.out.println();
         }
+
+    }
+    private void spawnEquipmentOnBoard() {
+        int weaponCount = parameters.getWeaponCount();
+        int clothesCount = parameters.getClothesCount();
+        equipmentSpawnStrategy.spawnEquipment(board, weaponCount, clothesCount);
+    }
+    private void spawnItems(List<Space> freeSpaces, int count,
+                            EquipmentFactory.EquipmentType type, Random random) {
+        int spawned = 0;
+        int attempts = 0;
+        while (spawned < count && attempts < freeSpaces.size()) {
+            Space space = freeSpaces.get(random.nextInt(freeSpaces.size()));
+            if (!space.hasEquipment()) {
+                space.addEquipment(EquipmentFactory.createRandom(type));
+                spawned++;
+            }
+            attempts++;
+        }
+    }
+    private void spawnEquipmentRandomly(Space[][] board, int weaponCount, int clothesCount) {
+        List<Space> freeSpaces = new ArrayList<>();
+        for (Space[] row : board) {
+            for (Space space : row) {
+                if (!space.isItWall()) {
+                    freeSpaces.add(space);
+                }
+            }
+        }
+        Random random = new Random();
+        spawnItems(freeSpaces, weaponCount, EquipmentFactory.EquipmentType.WEAPON, random);
+        spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES, random);
     }
 
     public Space[][] getBoard() {
         return board;
     }
 }
+

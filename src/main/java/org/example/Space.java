@@ -9,6 +9,7 @@ public class Space {
     private boolean isWall;
     private environmentalResource resource;
     private List<Agent> agents = new ArrayList<>();
+    private List<Equipment> equipmentOnGround = new ArrayList<>();
 
     private Space up;
     private Space right;
@@ -20,11 +21,11 @@ public class Space {
         y = given_y;
     }
 
-    public float calculateSurvivorWeight(Survivor o, SimulationEnvironment s){
+    public float calculateSurvivorWeight(Survivor o){
         return 0.0f;
     }
 
-    public float calculateInfectedWeight(Infected z, SimulationEnvironment s){
+    public float calculateInfectedWeight(Infected z){
         return 0.0f;
     }
 
@@ -69,4 +70,22 @@ public class Space {
     public Space getDown(){return down;}
     public Space getLeft(){return left;}
 
+    public void addEquipment(Equipment equipment) {
+        equipmentOnGround.add(equipment);
+    }
+
+    public boolean hasEquipment() {
+        return !equipmentOnGround.isEmpty();
+    }
+
+    public Equipment pickUpEquipment() {
+        if (!equipmentOnGround.isEmpty()) {
+            return equipmentOnGround.removeFirst();
+        }
+        return null;
+    }
+
+    public List<Equipment> getEquipmentOnGround() {
+        return equipmentOnGround;
+    }
 }
