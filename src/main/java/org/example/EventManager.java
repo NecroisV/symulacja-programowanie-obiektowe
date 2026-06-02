@@ -2,8 +2,8 @@ package org.example;
 
 public class EventManager {
     private static int currentDuration = 0;
-    private static int sinceLastEvent = 10;
-    private static int minimumCooldown = 0;
+    private static int sinceLastEvent = 0;
+    private static int minimumCooldown = 10;
 
     private static Event currentEvent = null;
     private static final double[] eventChances = SimulationParameters.getInstance().getEventChances();
@@ -14,12 +14,13 @@ public class EventManager {
     }
 
     private static boolean canSpawnEvent(){
+        sinceLastEvent++;
         if(sinceLastEvent >= minimumCooldown){
             double random = RNG.nextDouble();
             if(random <= chanceToSpawn){
+                sinceLastEvent = 0;
                 return true;
             }
-            return false;
         }
         return false;
     }
@@ -57,9 +58,9 @@ public class EventManager {
         else if(currentDuration > 0){
             currentEvent.trigger(board);
             currentDuration--;
-        }
-        else{
-            currentEvent = null;
+            if(currentDuration == 0){
+                currentEvent = null;
+            }
         }
     }
 

@@ -16,7 +16,7 @@ public class SimulationParameters {
 
     //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
-    private final double[] eventChances = new double[]{0.9, 10, 0, 2};
+    private final double[] eventChances = new double[]{0.3, 10, 0, 2};
     private final int[] eventDuration = new int[]{1, 5}; //min, max
     private final double earthquakeWallDestroyChance = 0.04;
 
