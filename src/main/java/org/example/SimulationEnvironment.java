@@ -142,19 +142,21 @@ public class SimulationEnvironment {
     }
 
 
-    private static final int SAFE_ZONE_COUNT = 2;
-    private static final int SAFE_ZONE_SIZE = 5;      // wewnętrzny rozmiar (bez ścian)
-    private static final float HEAL_CHANCE = 0.25f;
-    private static final float DESTRUCTION_THRESHOLD = 0.5f;
+
 
     private void createSafeZones(int width, int height){
+        int safeZoneCount = parameters.getSafeZoneCount();
+        int safeZoneSize = parameters.getSafeZoneSize();
+        float healChance = parameters.getHealChance();
+        float destructionThreshold = parameters.getResourceCount();
+
         int attempts = 0;
         int created = 0;
 
-        while(created < SAFE_ZONE_COUNT && attempts < 100){
+        while(created < safeZoneCount && attempts < 100){
             attempts++;
 
-            int margin = SAFE_ZONE_SIZE + 4; // zwiększony margines z powodu czyszczenia 2 pól
+            int margin = safeZoneSize + 4; // zwiększony margines z powodu czyszczenia 2 pól
             int startX = RNG.nextInt(width - margin * 2) + margin;
             int startY = RNG.nextInt(height - margin * 2) + margin;
 
@@ -162,18 +164,18 @@ public class SimulationEnvironment {
                 continue;
             }
 
-            SafeZone zone = new SafeZone(HEAL_CHANCE, DESTRUCTION_THRESHOLD);
+            SafeZone zone = new SafeZone(healChance, destructionThreshold);
 
             // TWORZENIE SAFE ZONE (ze ścianami na obwodzie)
-            for(int dy = -1; dy <= SAFE_ZONE_SIZE; dy++){
-                for(int dx = -1; dx <= SAFE_ZONE_SIZE; dx++){
+            for(int dy = -1; dy <= safeZoneSize; dy++){
+                for(int dx = -1; dx <= safeZoneSize; dx++){
                     int nx = startX + dx;
                     int ny = startY + dy;
                     if(nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
 
                     Space space = board[ny][nx];
-                    boolean isPerimeter = (dx == -1 || dx == SAFE_ZONE_SIZE
-                            || dy == -1 || dy == SAFE_ZONE_SIZE);
+                    boolean isPerimeter = (dx == -1 || dx == safeZoneSize
+                            || dy == -1 || dy == safeZoneSize);
 
                     if(isPerimeter){
                         // obwód = ściana
@@ -189,8 +191,8 @@ public class SimulationEnvironment {
             // CZYSZCZENIE 2 PÓL DOOKOŁA SAFE ZONE'U
             // UWAGA: To czyści WSZYSTKIE ściany w promieniu 2 pól od safe zone'u
             // ale NIE NARUSZA samych ścian safe zone'u!
-            for(int dy = -3; dy <= SAFE_ZONE_SIZE + 2; dy++){
-                for(int dx = -3; dx <= SAFE_ZONE_SIZE + 2; dx++){
+            for(int dy = -3; dy <= safeZoneSize + 2; dy++){
+                for(int dx = -3; dx <= safeZoneSize + 2; dx++){
                     int nx = startX + dx;
                     int ny = startY + dy;
 
@@ -199,8 +201,8 @@ public class SimulationEnvironment {
 
                     // Sprawdź czy to NIE jest pole należące do safe zone'u
                     boolean isPartOfSafeZone = false;
-                    for(int szY = -1; szY <= SAFE_ZONE_SIZE; szY++){
-                        for(int szX = -1; szX <= SAFE_ZONE_SIZE; szX++){
+                    for(int szY = -1; szY <= safeZoneSize; szY++){
+                        for(int szX = -1; szX <= safeZoneSize; szX++){
                             if(nx == startX + szX && ny == startY + szY){
                                 isPartOfSafeZone = true;
                                 break;
@@ -217,8 +219,8 @@ public class SimulationEnvironment {
             }
 
             // TWORZENIE 4 WEJŚĆ (niszczenie fragmentów ścian na obwodzie)
-            int centerX = startX + SAFE_ZONE_SIZE / 2;
-            int centerY = startY + SAFE_ZONE_SIZE / 2;
+            int centerX = startX + safeZoneSize / 2;
+            int centerY = startY + safeZoneSize / 2;
 
             // Wejście północne (górna ściana)
             int northX = centerX;
@@ -231,7 +233,7 @@ public class SimulationEnvironment {
 
             // Wejście południowe (dolna ściana)
             int southX = centerX;
-            int southY = startY + SAFE_ZONE_SIZE;
+            int southY = startY + safeZoneSize;
             if(southX >= 0 && southX < width && southY >= 0 && southY < height){
                 if(board[southY][southX].isItWall()){
                     board[southY][southX].destroyWallSilent();
@@ -248,7 +250,7 @@ public class SimulationEnvironment {
             }
 
             // Wejście wschodnie (prawa ściana)
-            int eastX = startX + SAFE_ZONE_SIZE;
+            int eastX = startX + safeZoneSize;
             int eastY = centerY;
             if(eastX >= 0 && eastX < width && eastY >= 0 && eastY < height){
                 if(board[eastY][eastX].isItWall()){
@@ -264,13 +266,14 @@ public class SimulationEnvironment {
 
     // sprawdza czy nowa strefa nakłada się na istniejące
     private boolean safeZoneOverlaps(int startX, int startY){
+        int safeZoneSize = parameters.getSafeZoneSize();
         for(SafeZone zone : zones){
             for(Space space : zone.getCoveredSpaces()){
                 int[] pos = space.getPosition();
                 int px = pos[0];
                 int py = pos[1];
-                if(px >= startX - SAFE_ZONE_SIZE - 4 && px <= startX + SAFE_ZONE_SIZE * 2 + 4
-                        && py >= startY - SAFE_ZONE_SIZE - 4 && py <= startY + SAFE_ZONE_SIZE * 2 + 4){
+                if(px >= startX - safeZoneSize - 4 && px <= startX + safeZoneSize * 2 + 4
+                        && py >= startY - safeZoneSize - 4 && py <= startY + safeZoneSize * 2 + 4){
                     return true;
                 }
             }
