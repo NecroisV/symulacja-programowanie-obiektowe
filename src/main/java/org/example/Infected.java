@@ -10,8 +10,8 @@ public class Infected extends Agent {
     private int dataTransmissionDistance;
     private InfectedMemory memory;
 
-    public Infected(int given_x, int given_y, int given_health) {
-        super(given_x, given_y, given_health);
+    public Infected(int given_x, int given_y, int given_health, int given_strength, int given_FOV, int given_speed) {
+        super(given_x, given_y, given_health, given_strength, given_FOV, given_speed);
     }
 
     public void fightSurvivor(Survivor target) {
@@ -20,7 +20,6 @@ public class Infected extends Agent {
     }
 
     public void shareMemory(Infected other) {}
-    public void healWound() {}
 
     @Override
     public void getAgentWeights(Space start, Map<String, Integer> baseWeights, int weightDivisor) {
@@ -41,7 +40,7 @@ public class Infected extends Agent {
                         addWeightWithSpill(space, baseWeights.getOrDefault("infectedCurrentSeenSurvivor", 100), weightDivisor);
                     } else if (a instanceof Infected && a != this) {
                         addWeightWithSpill(space, baseWeights.getOrDefault("infectedCloseInfected", 5), weightDivisor);
-                        space.changeWeight(-space.getWeight());
+                        space.changeWeight(-20 * space.getWeight());
                     }
                 }
             }

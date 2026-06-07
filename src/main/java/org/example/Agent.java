@@ -4,35 +4,37 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public abstract class Agent {
     private int x;
     private int y;
     private int age = 0;
     private int healthLevel;
+    private int maxHealthLevel;
     private int baseStrength;
     private int baseFOV = 5;
     private int baseSpeed = 2;
     private boolean isAlive = true;
-    private List<Wound> wounds;
+    private List<Wound> wounds = new ArrayList<>();
 
-    protected Agent(int given_x, int given_y, int given_health){
+    protected Agent(int given_x, int given_y, int given_health, int given_baseStrength, int given_baseFOV, int given_baseSpeed){
         x = given_x;
         y = given_y;
         healthLevel = given_health;
+        maxHealthLevel = given_health;
+        baseStrength = given_baseStrength;
+        baseFOV = given_baseFOV;
+        baseSpeed = given_baseSpeed;
     }
 
     public abstract void getAgentWeights(Space start, Map<String, Integer> weights, int divisor);
-
-    // Dodane z powrotem: Pusta metoda z oryginalnego kodu
-    public void getAgentWeights(Space start) {}
 
     public int[] makeMove(Space start, Map<String, Integer> weights, int divisor) {
         getAgentWeights(start, weights, divisor);
         ArrayList<Space> availableSpaces = possibleMove(start);
 
         if (availableSpaces.isEmpty()) return start.getPosition();
+        if (this instanceof Survivor){((Survivor) this).changeEnergyLevel(-5);}
 
         int totalWeightSum = 0;
         List<Integer> validWeights = new ArrayList<>();
@@ -53,8 +55,7 @@ public abstract class Agent {
             return bestWorst.getPosition();
         }
 
-        Random random = new Random();
-        int rolledValue = random.nextInt(totalWeightSum);
+        int rolledValue = RNG.nextInt(totalWeightSum);
         int currentSum = 0;
         for (int i = 0; i < availableSpaces.size(); i++) {
             currentSum += validWeights.get(i);
@@ -79,6 +80,9 @@ public abstract class Agent {
     }
 
     protected ArrayList<Space> getSpacesWithinRadius(Space start, int radius, boolean ignoreWalls) {
+        if(this instanceof Survivor){
+            ((Survivor) this).changeEnergyLevel(-5);
+        }
         ArrayList<Space> visitedSpaces = new ArrayList<>();
         if (start == null || (start.isItWall() && !ignoreWalls)) return visitedSpaces;
 
@@ -113,7 +117,7 @@ public abstract class Agent {
     }
 
     private ArrayList<Space> possibleMove(Space start) {
-        return getSpacesWithinRadius(start, baseSpeed, false);
+        return getSpacesWithinRadius(start, this.calculateSpeed(), false);
     }
 
     protected List<Space> getLocalArea(Space start) {
@@ -192,7 +196,6 @@ public abstract class Agent {
         return true;
     }
 
-    // DODANE Z POWROTEM: Metody statusu i życia agenta
     public void ageUp(){
         age++;
     }
@@ -203,28 +206,57 @@ public abstract class Agent {
     }
 
     public void changeHealthLevel(int amount) {
+        if(this instanceof Survivor && amount < 0){
+            for(Equipment equipment : ((Survivor) this).getEquipment()){
+                if(equipment instanceof Clothes){
+                    amount += ((Clothes) equipment).getDamageReduction();
+                }
+            }
+        }
         this.healthLevel += amount;
         if (this.healthLevel <= 0) {
             die();
         }
+        if(healthLevel>maxHealthLevel) healthLevel = maxHealthLevel;
     }
 
-    private int calculateFOV(){
+    public int calculateFOV(){
         int currentFOV = (int) (baseFOV * TimeOfDay.getVisibilityLevel(SimulationApp.getEnvironment().getActualTick()));
-        return Math.max(1, currentFOV);
+        for(Wound wound : wounds){
+            if(wound instanceof HeadWound){
+                currentFOV -= ((HeadWound) wound).getReduction();
+            }
+        }
+        return Math.max(0, currentFOV);
     }
 
     public int calculateStrength(){
-        if(this instanceof Survivor){
-            return 10;
+        int currentStrength = baseStrength;
+        for(Wound wound : wounds){
+            if(wound instanceof ArmWound){
+                currentStrength -= ((ArmWound) wound).getReduction();
+            }
         }
-        else{
-            return 5;
+        if (this instanceof Survivor){
+            if (((Survivor) this).isStarving()) currentStrength = (int) currentStrength/2;
+            for(Equipment equipment : ((Survivor) this).getEquipment()){
+                if (equipment instanceof Weapon){
+                    currentStrength += ((Weapon) equipment).calculateActualStrength();
+                    ((Weapon) equipment).loseDurability();
+                }
+            }
         }
+        return Math.max(1, currentStrength);
     }
 
     public int calculateSpeed(){
-        return 10;
+        int currentSpeed = baseSpeed;
+        for(Wound wound : wounds){
+            if(wound instanceof LegWound){
+                currentSpeed -= ((LegWound) wound).getReduction();
+            }
+        }
+        return Math.max(0, currentSpeed);
     }
 
     public boolean isItAlive(){return isAlive;}
@@ -235,6 +267,16 @@ public abstract class Agent {
 
     public int getHealth(){return healthLevel;}
 
+    public void healWound() {
+        wounds.remove(RNG.nextInt(wounds.size()));
+    }
+
     public void reviveWound(){
+        switch (RNG.nextInt(2)){
+            case(0) -> wounds.add(new HeadWound());
+            case(1) -> wounds.add(new ArmWound());
+            case(2) -> wounds.add(new LegWound());
+
+        }
     }
 }

@@ -3,50 +3,41 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 
 public class Survivor extends Agent {
     private int energyLevel = 100;
-    private List<Space> visitedSpacesMemory;
-    private int equipmentCapacity = 5;
+    private int maxEnergyLevel = energyLevel;
     private int weaponCapacity = 2;
     private int clothesCapacity = 2;
     private List<Equipment> equipment = new ArrayList<>();
     private float chanceToHeal;
     private boolean isStarving = false;
 
-    public Survivor(int given_x, int given_y, int given_health) {
-        super(given_x, given_y, given_health);
+    public Survivor(int given_x, int given_y, int given_health, int given_strength, int given_FOV, int given_speed) {
+        super(given_x, given_y, given_health, given_strength, given_FOV, given_speed);
     }
 
     public void changeEnergyLevel(int amount) {
         energyLevel += amount;
-        if (energyLevel < 0) energyLevel = 0;
-    }
-
-    public void useResource(environmentalResource resource) {
-    }
-
-    public void pickUpEquipment(Equipment ekw) {
-        if (hasSpaceInInventory(ekw)) {
-            equipment.add(ekw);
+        if (energyLevel > maxEnergyLevel) energyLevel = maxEnergyLevel;
+        if (energyLevel < 0){
+            energyLevel = 0;
+            isStarving = true;
+            starve();
         }
     }
 
-    public boolean hasFreeSlot() {
-        return true;
-    }
-
     public void starve() {
-        isStarving = true;
+        if(isStarving){
+            this.changeHealthLevel(-2);
+        }
     }
 
-    public void fightSurvivor(Survivor other) {
-    }
-
-    public void fightInfected(Infected z) {
-        int damageToInfected = (this.calculateStrength()) - z.calculateStrength();
-        z.changeHealthLevel(Math.min(-damageToInfected, -5));
+    public boolean isStarving(){
+        return isStarving;
     }
 
     public void steal(Survivor loser) {
@@ -69,12 +60,9 @@ public class Survivor extends Agent {
         return this.equipment;
     }
 
-    public void healWound() {
-    }
-
-    public Infected transformIntoInfected(Infected z) {
+    public Infected transformIntoInfected(Infected i) {
         int[] position = getPosition();
-        return new Infected(position[0], position[1], (int) round(z.getHealth() / 2.0));
+        return new Infected(position[0], position[1], (int) round(i.getHealth() / 2.0), i.calculateStrength(), i.calculateFOV(), i.calculateSpeed());
     }
 
     public <T extends Equipment> List<T> getEquipmentOfType(Class<T> type) {
@@ -101,6 +89,15 @@ public class Survivor extends Agent {
         return true;
     }
 
+    public void getEquipment(Equipment item){
+        if(item instanceof Weapon && getEquipmentOfType(Weapon.class).size() >= weaponCapacity){
+            equipment.add(item);
+        }
+        else if (item instanceof Clothes && getEquipmentOfType(Clothes.class).size() >= clothesCapacity) {
+            equipment.add(item);
+        }
+    }
+
     public boolean hasSpaceInInventory(Equipment item) {
         if (item instanceof Weapon) {
             return getEquipmentOfType(Weapon.class).size() < weaponCapacity;
@@ -117,7 +114,6 @@ public class Survivor extends Agent {
 
     @Override
     public void getAgentWeights(Space start, Map<String, Integer> baseWeights, int weightDivisor) {
-        this.energyLevel -= 5;
         int currentEnergy = getEnergyLevel();
         int strength = calculateStrength();
 

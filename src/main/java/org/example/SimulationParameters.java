@@ -5,14 +5,18 @@ import java.util.Map;
 
 public class SimulationParameters {
     private static SimulationParameters instance;
-    private int startingSurvivorAmount = 1500;
-    private int startingInfectedAmount = 5000;
+    private int startingSurvivorAmount = 15;
+    private int startingInfectedAmount = 700;
     private float chanceForWoundAfterBattle;
     private Map<String, Integer> moveWeights;
-    private int[] startingEqAndWoundChances = new int[]{10, 15};
+    private int[] startingEqAndWoundChances = new int[]{10, 15}; //EQChance, WouondChance
     private final int simulationSeed = 128;
-    private int weaponCount = 800;
-    private int clothesCount = 800;
+    private int weaponCount = 80;
+    private int clothesCount = 80;
+    private int resourceCount = 200;
+
+    private int[] survivorStats = new int[]{100, 20, 5, 3}; //health, strength, FOV, speed
+    private int[] infectedStats = new int[]{70, 7, 4, 5}; //health, strength, FOV, speed
 
     //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
@@ -28,15 +32,15 @@ public class SimulationParameters {
     }
 
     private void loadDefaultWeights() {
-        moveWeights.put("infectedCurrentSeenSurvivor", 100);
+        moveWeights.put("infectedCurrentSeenSurvivor", 200);
         moveWeights.put("infectedMemory", 25);
-        moveWeights.put("infectedCloseInfected", 15);
+        moveWeights.put("infectedCloseInfected", 50);
 
         moveWeights.put("survivorInfected", -100);
         moveWeights.put("survivorSafeZone", 80);
         moveWeights.put("survivorResource", 50);
         moveWeights.put("survivorSurvivor", -125);
-        moveWeights.put("survivorEquipment", 50);
+        moveWeights.put("survivorEquipment", 150);
 
     }
     //Ze wzorca projektowego Singleton
@@ -70,6 +74,11 @@ public class SimulationParameters {
     public Map<String, Integer> getMoveWeights() {
         return moveWeights;
     }
+
     public int getWeaponCount() { return weaponCount; }
     public int getClothesCount() { return clothesCount; }
+    public int getResourceCount() { return resourceCount; }
+
+    public int[] getSurvivorStats(){return survivorStats;}
+    public int[] getInfectedStats(){return infectedStats;}
 }

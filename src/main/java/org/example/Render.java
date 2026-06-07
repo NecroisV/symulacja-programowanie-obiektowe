@@ -31,11 +31,10 @@ public class Render {
                 if (space.isItWall()) {
                     gc.setFill(Color.web("#ff7e21"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
-                    gc.setFill(Color.web("#6c757d"));
 
                 } else if (space.hasEquipment()) {
                     if (space.getEquipmentOnGround().getFirst() instanceof Weapon) {
-                        gc.setFill(Color.RED);
+                        gc.setFill(Color.GRAY);
                         gc.fillRect(x, y, tileSize - 1, tileSize - 1);
                         gc.setFill(Color.BLACK);
                         gc.fillText("W", x + tileSize / 2, y + tileSize / 2);
@@ -46,6 +45,11 @@ public class Render {
                         gc.fillText("C", x + tileSize / 2, y + tileSize / 2);
                     }
 
+                } else if (space.containsResource()) {
+                    gc.setFill(Color.BROWN);
+                    gc.fillRect(x, y, tileSize - 1, tileSize - 1);
+                    gc.setFill(Color.WHITE);
+                    gc.fillText("R", x + tileSize / 2, y + tileSize / 2);
                 } else {
                     gc.setFill(Color.web("#2d2d35"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
@@ -71,7 +75,7 @@ public class Render {
                                 gc.setFill(Color.web("#38b000"));
                                 gc.fillOval(x + offset, y + offset, circleRadius, circleRadius);
                                 gc.setFill(Color.WHITE);
-                                gc.fillText("Z", x + tileSize / 2, y + tileSize / 2);
+                                gc.fillText("I", x + tileSize / 2, y + tileSize / 2);
                             }
                         }
                     }

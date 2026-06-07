@@ -12,23 +12,24 @@ public class SimulationEnvironment {
     private Space[][] board;
     private List<Agent> agentList = new ArrayList<>();
     private Set<Agent> usedAgentList = new HashSet<>();
+    private List<environmentalResource> resources = new ArrayList<>();
     private int actualTick = 0;
     private float lightLevel;
     private TimeOfDay timeOfDay;
-    private SimulationParameters parameters = SimulationParameters.getInstance();
+    private final SimulationParameters parameters = SimulationParameters.getInstance();
     private DataCollector data = new DataCollector();
     private List<SafeZone> zones = new ArrayList<>();
     private final List<String> turnLogs = new ArrayList<>();
 
-    private EquipmentSpawnStrategy equipmentSpawnStrategy;
+    private final EquipmentSpawnStrategy equipmentSpawnStrategy;
 
     public SimulationEnvironment(int width, int height){
         this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
         createBoard(width, height);
         int[] agentNumbers = parameters.getAgentsAmount();
-        int[] chances = parameters.getEqAndWoundChances();
-        createAgents(agentNumbers[0], agentNumbers[1], chances[0], chances[1]);
+        createAgents(agentNumbers[0], agentNumbers[1]);
         spawnEquipmentOnBoard();
+        createResources(parameters.getResourceCount());
 
         data.updateData(this);
     }
@@ -49,13 +50,14 @@ public class SimulationEnvironment {
     public int getActualTick() { return this.actualTick; }
 
     private void updateTimeOfDay(){
-
         actualTick++;
+        for(environmentalResource resource : resources){
+            if(resource.wasUsed()) {
+                resource.updateTime();
+                resource.Respawn();
+            }
+        }
     }
-//
-//    private void calculateLightLevel(){
-//        lightLevel = 1.0f;
-//    }
 
     private void createBoard(int width, int height){
         board = new Space[height][width];
@@ -70,7 +72,7 @@ public class SimulationEnvironment {
                     board[y][0].joinLeft(board[y][x]);
                     board[y][x].joinRight(board[y][0]);
                 }
-                if(RNG.nextInt(100)>=90) {
+                if(RNG.nextInt(100)>=92) {
                     board[y][x].createWall();}
             }
 
@@ -89,19 +91,41 @@ public class SimulationEnvironment {
         }
     }
 
-    private void createAgents(int survivorNumber, int infectedNumber, int equipmentChance, int woundChance){
+    private void createResources(int resourceNumber){
         int width = board[0].length;
         int height = board.length;
 
-        int health = 100;
+        int i = 0;
+
+        while(i < resourceNumber){
+            int x = RNG.nextInt(width -1);
+            int y = RNG.nextInt(height -1);
+            if (!board[y][x].isItWall() && !board[y][x].containsResource()){
+                environmentalResource resource = new environmentalResource();
+                board[y][x].addResource(resource);
+                resources.add(resource);
+                i ++;
+            }
+        }
+    }
+
+    private void createAgents(int survivorNumber, int infectedNumber){
+        int width = board[0].length;
+        int height = board.length;
 
         int i = 0;
+
+        int[] survivorStats = parameters.getSurvivorStats();
+        int[] infectedStats = parameters.getInfectedStats();
+        int[] EqAndWoundChances = parameters.getEqAndWoundChances();
+
         while(i < survivorNumber){
             int x = RNG.nextInt(width -1);
             int y = RNG.nextInt(height -1);
 
             if (!board[y][x].isItWall()){
-                Survivor survivor = new Survivor(x, y, health);
+                Survivor survivor = new Survivor(x, y, survivorStats[0], survivorStats[1], survivorStats[2], survivorStats[3]);
+                if(RNG.nextInt(100)>EqAndWoundChances[0]){survivor.getEquipment(EquipmentFactory.createWeapon(5,10));}
                 agentList.add(survivor);
                 board[y][x].addAgent(survivor);
                 i ++;
@@ -114,7 +138,9 @@ public class SimulationEnvironment {
             int y = RNG.nextInt(height -1);
 
             if (!board[y][x].isItWall()){
-                Infected infected = new Infected(x, y, health);
+                Infected infected = new Infected(x, y, infectedStats[0], infectedStats[1], infectedStats[2], infectedStats[3]);
+                if(RNG.nextInt(100)>EqAndWoundChances[1]){infected.reviveWound();}
+
                 agentList.add(infected);
                 board[y][x].addAgent(infected);
                 i ++;
@@ -135,7 +161,7 @@ public class SimulationEnvironment {
                         List<Agent> copyAgents = new ArrayList<>(originalAgents);
 
                         for(Agent a : copyAgents){
-                            if(!usedAgentList.contains(a)) {
+                            if(!usedAgentList.contains(a) && a.isItAlive()) {
                                 usedAgentList.add(a);
                                 int[] agentMove = a.makeMove(board[i][j], parameters.getMoveWeights(), 2);
                                 displaceAgent(new int[]{i, j}, agentMove, a);
@@ -186,8 +212,8 @@ public class SimulationEnvironment {
                                 Survivor s1 = survivors.get(0);
                                 Survivor s2 = survivors.get(1);
 
-                                int s1Weight = Math.max(1, s1.calculateStrength());
-                                int s2Weight = Math.max(1, s2.calculateStrength());
+                                int s1Weight = s1.calculateStrength();
+                                int s2Weight = s2.calculateStrength();
                                 int totalWeight = s1Weight + s2Weight;
 
                                 int roll = RNG.nextInt(totalWeight);
@@ -195,9 +221,11 @@ public class SimulationEnvironment {
                                 if (roll < s1Weight) {
                                     int damage = Math.max(5, s1Weight - (s2Weight / 2));
                                     s2.changeHealthLevel(-damage);
+                                    s2.reviveWound();
                                 } else {
                                     int damage = Math.max(5, s2Weight - (s1Weight / 2));
                                     s1.changeHealthLevel(-damage);
+                                    s1.reviveWound();
                                 }
 
                                 if (!s2.isItAlive() || s2.getHealth() <= 0) {
@@ -207,7 +235,7 @@ public class SimulationEnvironment {
                                     space.deleteAgent(s2);
                                     survivors.remove(s2);
                                 } else if (!s1.isItAlive() || s1.getHealth() <= 0) {
-                                    turnLogs.add("⚔calały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
+                                    turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
                                     s2.steal(s1);
                                     s1.die();
                                     space.deleteAgent(s1);
@@ -216,16 +244,15 @@ public class SimulationEnvironment {
                             }
                         }
 
-
                         if (!survivors.isEmpty() && !infected.isEmpty()) {
                             data.incSurvivorInfectedInteractions();
 
                             while (!survivors.isEmpty() && !infected.isEmpty()) {
-                                Survivor survivor = survivors.getFirst();
-                                Infected zakazony = infected.getFirst();
+                                Survivor survivor = survivors.get(0);
+                                Infected zakazony = infected.get(0);
 
-                                int zakazonyWeight = Math.max(1, zakazony.calculateStrength());
-                                int survivorWeight = Math.max(1, survivor.calculateStrength());
+                                int zakazonyWeight = zakazony.calculateStrength();
+                                int survivorWeight = survivor.calculateStrength();
                                 int totalWeight = zakazonyWeight + survivorWeight;
 
                                 int roll = RNG.nextInt(totalWeight);
@@ -234,11 +261,23 @@ public class SimulationEnvironment {
                                     int damage = Math.max(5, zakazonyWeight - (survivorWeight / 2));
                                     survivor.changeHealthLevel(-damage);
                                     if (RNG.nextFloat() < zakazony.getInfectionChance()) {
-                                        transformSurvivor(survivor, zakazony, x, y);
+                                        boolean isPrevented = false;
+                                        for(Equipment equipment : survivor.getEquipment()){
+                                            if(equipment instanceof Clothes){
+                                                if(((Clothes) equipment).getInfectionPrevention()){
+                                                    isPrevented = true;
+                                                }
+                                            }
+                                        }
+                                        survivor.reviveWound();
+                                        if(!isPrevented) {
+                                            transformSurvivor(survivor, zakazony, x, y);
+                                        }
                                     }
                                 } else {
                                     int damage = Math.max(5, survivorWeight - (zakazonyWeight / 2));
                                     zakazony.changeHealthLevel(-damage);
+                                    zakazony.reviveWound();
                                 }
 
                                 if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
@@ -272,6 +311,13 @@ public class SimulationEnvironment {
                         int[] position = space.getPosition();
                         turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] podniósł ekwipunek");
                     }
+                    if(!survivors.isEmpty() && space.containsResource()){
+                        int[] restoredThings = space.getResource().getUsed();
+                        survivors.getFirst().changeEnergyLevel(restoredThings[0]);
+                        survivors.getFirst().changeHealthLevel(restoredThings[1]);
+                        int[] position = space.getPosition();
+                        turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] podniósł zasoby");
+                    }
                 }
             }
         }
@@ -288,12 +334,28 @@ public class SimulationEnvironment {
     }
 
     private void deleteDeadAgents() {
+        int width = board[0].length;
+        int height = board.length;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Space space = board[y][x];
+                if (!space.isItWall()) {
+                    List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
+                    for (Agent a : agentsOnSpace) {
+                        if (!a.isItAlive()) {
+                            space.deleteAgent(a);
+                        }
+                    }
+                }
+            }
+        }
+
         agentList.removeIf(a -> !a.isItAlive());
     }
 
     private void considerRandomEvent(){
         EventManager.runEventCheck(this.board);
-        // data.incHealedWoundInSafeZones();
     }
 
     private void spawnEquipmentOnBoard() {
@@ -301,8 +363,8 @@ public class SimulationEnvironment {
         int clothesCount = parameters.getClothesCount();
         equipmentSpawnStrategy.spawnEquipment(board, weaponCount, clothesCount);
     }
-    private void spawnItems(List<Space> freeSpaces, int count,
-                            EquipmentFactory.EquipmentType type){
+
+    private void spawnItems(List<Space> freeSpaces, int count, EquipmentFactory.EquipmentType type){
         int spawned = 0;
         int attempts = 0;
         while (spawned < count && attempts < freeSpaces.size()) {
@@ -314,6 +376,7 @@ public class SimulationEnvironment {
             attempts++;
         }
     }
+
     private void spawnEquipmentRandomly(Space[][] board, int weaponCount, int clothesCount) {
         List<Space> freeSpaces = new ArrayList<>();
         for (Space[] row : board) {
@@ -327,8 +390,5 @@ public class SimulationEnvironment {
         spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES);
     }
 
-    public Space[][] getBoard() {
-        return board;
-    }
-}
 
+}
