@@ -1,13 +1,13 @@
 package org.example;
 
 public class Fog implements Event {
-    private int visibilityReduction;
+    private static final double[] fogIntensity = SimulationParameters.getInstance().getFogIntensity();
 
     public Fog(){}
 
     @Override
     public void trigger(Space[][] board) {
-        //brak funkcjonalności, widoczność nie gra jeszcze roli w symulacji
-
+        double visibilityModifier = 1.0 - RNG.nextDouble(fogIntensity[0], fogIntensity[1]);
+        TimeOfDay.setFogLevel(visibilityModifier);
     }
 }

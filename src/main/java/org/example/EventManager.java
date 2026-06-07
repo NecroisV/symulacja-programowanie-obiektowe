@@ -59,6 +59,7 @@ public class EventManager {
             currentEvent.trigger(board);
             currentDuration--;
             if(currentDuration == 0){
+                TimeOfDay.setFogLevel(1);
                 currentEvent = null;
             }
         }

@@ -16,9 +16,11 @@ public class SimulationParameters {
 
     //SEKCJA WYDARZEŃ LOSOWYCH (POGODOWYCH)
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
-    private final double[] eventChances = new double[]{0.3, 10, 0, 2};
+    private final double[] eventChances = new double[]{0.3, 10, 20, 2};
     private final int[] eventDuration = new int[]{1, 5}; //min, max
     private final double earthquakeWallDestroyChance = 0.04;
+    private final double[] fogIntensity =  new double[]{0.2, 0.6}; //min, max;
+    private final int[] dayNightCycle = new int[]{15, 7}; //długość dnia, długość nocy (w tickach)
 
     public SimulationParameters() {
         moveWeights = new HashMap<>();
@@ -62,6 +64,8 @@ public class SimulationParameters {
     public double[] getEventChances(){return eventChances;}
     public int[] getEventDuration(){return eventDuration;}
     public double getEarthquakeWallDestroyChance(){return earthquakeWallDestroyChance;}
+    public double[] getFogIntensity(){return fogIntensity;}
+    public int[] getDayNightCycle(){return dayNightCycle;}
 
     public Map<String, Integer> getMoveWeights() {
         return moveWeights;

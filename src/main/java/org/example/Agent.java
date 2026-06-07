@@ -117,12 +117,12 @@ public abstract class Agent {
     }
 
     protected List<Space> getLocalArea(Space start) {
-        int actionRadius = calculateFOV(3) + calculateSpeed();
+        int actionRadius = calculateFOV() + calculateSpeed();
         return getSpacesWithinRadius(start, actionRadius, false);
     }
 
     public ArrayList<ArrayList<Space>> whatAgentSaw(Space start){
-        int actualFOV = calculateFOV(3);
+        int actualFOV = calculateFOV();
         ArrayList<Space> seenSpaces = getSpacesWithinRadius(start, actualFOV, true);
 
         Map<String, Space> localGridMap = new HashMap<>();
@@ -209,8 +209,9 @@ public abstract class Agent {
         }
     }
 
-    private int calculateFOV(float lightLevel){
-        return baseFOV;
+    private int calculateFOV(){
+        int currentFOV = (int) (baseFOV * TimeOfDay.getVisibilityLevel(SimulationApp.getEnvironment().getActualTick()));
+        return Math.max(1, currentFOV);
     }
 
     public int calculateStrength(){
