@@ -14,6 +14,10 @@ public class SimulationParameters {
     private int weaponCount = 80;
     private int clothesCount = 80;
     private int resourceCount = 200;
+    private int safeZoneCount = 2;
+    private int safeZoneSize = 5;      // wewnętrzny rozmiar (bez ścian)
+    private float healChance = 0.25f;
+    private float destructionThreshold = 0.5f;
 
     private int[] survivorStats = new int[]{100, 20, 5, 3}; //health, strength, FOV, speed
     private int[] infectedStats = new int[]{70, 7, 4, 5}; //health, strength, FOV, speed
@@ -81,4 +85,9 @@ public class SimulationParameters {
 
     public int[] getSurvivorStats(){return survivorStats;}
     public int[] getInfectedStats(){return infectedStats;}
+
+    public int getSafeZoneCount(){return safeZoneCount;}
+    public int getSafeZoneSize(){return safeZoneSize;}
+    public float getHealChance(){return healChance;}
+    public float getDestructionThreshold() {return destructionThreshold;}
 }
