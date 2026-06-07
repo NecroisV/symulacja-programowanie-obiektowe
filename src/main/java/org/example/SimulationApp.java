@@ -10,10 +10,10 @@ import javafx.stage.Stage;
 
 public class SimulationApp extends Application {
 
-    private static final int BOARD_WIDTH = 700;
-    private static final int BOARD_HEIGHT = 500;
-    private static final double TILE_SIZE = 2.0;
-    private static final double LOGS_HEIGHT = 200.0;
+    private static final int BOARD_WIDTH = 90;
+    private static final int BOARD_HEIGHT = 60;
+    private static final double TILE_SIZE = 20.0;
+    private static final double LOGS_HEIGHT = 160.0;
     private static SimulationEnvironment environment;
 
     public static SimulationEnvironment getEnvironment() {
@@ -39,7 +39,7 @@ public class SimulationApp extends Application {
         new AnimationTimer() {
             private long lastUpdate = 0;
 
-            private final long TICK_RATE = 8000000L;
+            private final long TICK_RATE = 128000000;
 
             @Override
             public void handle(long now) {

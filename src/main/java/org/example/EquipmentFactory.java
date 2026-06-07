@@ -1,7 +1,5 @@
 package org.example;
 
-import java.util.Random;
-
 public class EquipmentFactory {
 
     public enum EquipmentType {
@@ -9,17 +7,16 @@ public class EquipmentFactory {
     }
 
     public static Equipment createRandom(EquipmentType type) {
-        Random random = new Random();
         return switch (type) {
             case WEAPON -> new Weapon(
-                    random.nextInt(5) + 3,   // baseStrength: 3-7
-                    random.nextInt(10) + 10  // maxDurability: 10-19
+                    RNG.nextInt(5) + 3,   // baseStrength: 3-7
+                    RNG.nextInt(10) + 10  // maxDurability: 10-19
             );
             case CLOTHES -> {
-                int maxPrevention = random.nextInt(5) + 3; // 3-7
+                int maxPrevention = RNG.nextInt(5) + 3; // 3-7
                 yield new Clothes(
-                        random.nextInt(3) + 1,  // damageReduction: 1-3
-                        random.nextInt(2) + 1,  // energyUseReduction: 1-2
+                        RNG.nextInt(3) + 1,  // damageReduction: 1-3
+                        RNG.nextInt(2) + 1,  // energyUseReduction: 1-2
                         maxPrevention,
                         maxPrevention
                 );

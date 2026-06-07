@@ -98,4 +98,12 @@ public class Space {
     public List<Equipment> getEquipmentOnGround() {
         return equipmentOnGround;
     }
+
+    public void addResource(environmentalResource given_resource){
+        resource = given_resource;
+    }
+
+    public environmentalResource getResource(){
+        return resource;
+    }
 }

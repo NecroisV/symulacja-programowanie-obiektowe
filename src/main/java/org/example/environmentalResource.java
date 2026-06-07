@@ -8,11 +8,17 @@ public class environmentalResource {
     private boolean isUsed;
 
     public environmentalResource(){
-
+        energyRecovery = RNG.nextInt(10, 15);
+        healthRecovery = RNG.nextInt(5, 10);
+        minimalRespawnTime = RNG.nextInt(5, 7);
+        timeFromUse = -1;
+        isUsed = false;
     }
 
-    public void getUsed(){
-
+    public int[] getUsed(){
+        isUsed = true;
+        timeFromUse = 0;
+        return new int[] {energyRecovery, healthRecovery};
     }
 
     public boolean wasUsed(){
@@ -20,10 +26,12 @@ public class environmentalResource {
     }
 
     public void updateTime(){
-
+        timeFromUse += 1;
     }
 
     public void Respawn(){
-
+        if(RNG.nextInt(minimalRespawnTime)+timeFromUse>minimalRespawnTime){
+            isUsed = false;
+        }
     }
 }

@@ -5,7 +5,7 @@ public class Clothes extends Equipment
     private int damageReduction;
     private int energyUseReduction;
     private int infectionPrevention;
-    private int maxInfectionPrevention;
+    private final int maxInfectionPrevention;
 
     public Clothes(int damageReduction, int energyUseReduction, int infectionPrevention, int maxInfectionPrevention)
     {
@@ -15,21 +15,17 @@ public class Clothes extends Equipment
         this.maxInfectionPrevention = maxInfectionPrevention;
     }
 
-    public int calculateDamageReduction()
+    private int calculateDamageReduction()
     {
-        if(maxInfectionPrevention <=0) {return 0;}
         return (int) Math.round((double) (damageReduction * infectionPrevention)/ maxInfectionPrevention);
     }
 
-    public int calculateEnergyUseReduction()
+    private int calculateEnergyUseReduction()
     {
-        if(maxInfectionPrevention <=0) {return 0;}
-        else
-        {
-            return (int) Math.round((double) (energyUseReduction * infectionPrevention)/ maxInfectionPrevention);
-        }
+        return (int) Math.round((double) (energyUseReduction * infectionPrevention)/ maxInfectionPrevention);
     }
-    public void loseInfectionPrevention()
+
+    private void loseInfectionPrevention()
     {
         if(infectionPrevention >0)
         {
@@ -39,40 +35,23 @@ public class Clothes extends Equipment
 
     public int getDamageReduction()
     {
-        return damageReduction;
-    }
-
-    public void setDamageReduction(int newDamageReduction)
-    {
-        this.damageReduction = newDamageReduction;
+        return calculateDamageReduction();
     }
 
     public int getEnergyUseReduction()
     {
-        return energyUseReduction;
+        return calculateEnergyUseReduction();
     }
 
-    public void setEnergyUseReduction(int newEnergyUseReduction)
+    public boolean getInfectionPrevention()
     {
-        this.energyUseReduction = newEnergyUseReduction;
-    }
-
-    public int getInfectionPrevention()
-    {
-        return infectionPrevention;
-    }
-
-    public void setInfectionPrevention(int newInfectionPrevention)
-    {
-        if(newInfectionPrevention >=0 && newInfectionPrevention <= maxInfectionPrevention)
-        {
-            this.infectionPrevention = newInfectionPrevention;
+        if(infectionPrevention>0){
+            loseInfectionPrevention();
+            return true;
         }
-    }
-
-    public int getMaxInfectionPrevention()
-    {
-        return maxInfectionPrevention;
+        else{
+            return false;
+        }
     }
 
     @Override
