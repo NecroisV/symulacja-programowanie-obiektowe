@@ -14,12 +14,18 @@ public class SimulationApp extends Application {
     private static final int BOARD_HEIGHT = 500;
     private static final double TILE_SIZE = 2.0;
     private static final double LOGS_HEIGHT = 200.0;
+    private static SimulationEnvironment environment;
 
-    private SimulationEnvironment environment;
+    public static SimulationEnvironment getEnvironment() {
+        if(environment == null){
+            environment = new SimulationEnvironment(BOARD_WIDTH, BOARD_HEIGHT);
+        }
+        return environment;
+    }
 
     @Override
     public void start(Stage primaryStage) {
-        environment = new SimulationEnvironment(BOARD_WIDTH, BOARD_HEIGHT);
+        environment = getEnvironment();
 
         double canvasWidth = BOARD_WIDTH * TILE_SIZE;
         double canvasHeight = (BOARD_HEIGHT * TILE_SIZE) + LOGS_HEIGHT;

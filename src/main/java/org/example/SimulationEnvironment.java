@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SimulationEnvironment {
+    private static SimulationEnvironment instance;
     private Space[][] board;
     private List<Agent> agentList = new ArrayList<>();
     private Set<Agent> usedAgentList = new HashSet<>();
@@ -45,16 +46,16 @@ public class SimulationEnvironment {
     }
 
     public List<Agent> getAgentList() { return agentList; }
-    public int getActualTick() { return actualTick; }
+    public int getActualTick() { return this.actualTick; }
 
     private void updateTimeOfDay(){
-        calculateLightLevel();
+
         actualTick++;
     }
-
-    private void calculateLightLevel(){
-        lightLevel = 1.0f;
-    }
+//
+//    private void calculateLightLevel(){
+//        lightLevel = 1.0f;
+//    }
 
     private void createBoard(int width, int height){
         board = new Space[height][width];
