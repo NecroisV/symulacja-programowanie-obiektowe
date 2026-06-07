@@ -5,11 +5,11 @@ public class Weapon extends Equipment {
     private int actualDurability;
     private int maxDurability;
 
-    public Weapon(int baseStrength, int maxDurability)
+    public Weapon(int baseStrength, int actualDurability, int maxDurability)
     {
      this.baseStrength = baseStrength;
-     this.maxDurability = maxDurability;
      this.actualDurability = actualDurability;
+     this.maxDurability = maxDurability;
     }
 
     public void loseDurability()

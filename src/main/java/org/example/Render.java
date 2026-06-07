@@ -28,10 +28,10 @@ public class Render {
                 double y = i * tileSize;
                 Space space = board[i][j];
 
+                // RYSOWANIE TŁA
                 if (space.isItWall()) {
                     gc.setFill(Color.web("#ff7e21"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
-
                 } else if (space.hasEquipment()) {
                     if (space.getEquipmentOnGround().getFirst() instanceof Weapon) {
                         gc.setFill(Color.GRAY);
@@ -44,16 +44,21 @@ public class Render {
                         gc.setFill(Color.BLACK);
                         gc.fillText("C", x + tileSize / 2, y + tileSize / 2);
                     }
-
                 } else if (space.containsResource()) {
                     gc.setFill(Color.BROWN);
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
                     gc.setFill(Color.WHITE);
                     gc.fillText("R", x + tileSize / 2, y + tileSize / 2);
+                } else if (space.isInSafeZone()) {
+                    gc.setFill(Color.web("#1a472a")); // ciemnozielone tło = SafeZone
+                    gc.fillRect(x, y, tileSize - 1, tileSize - 1);
                 } else {
                     gc.setFill(Color.web("#2d2d35"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
+                }
 
+                // RYSOWANIE AGENTÓW (ZAWSZE, NA KAŻDYM POLU NIE-ŚCIANNYM)
+                if (!space.isItWall()) {
                     List<Agent> agentsOnSpace = space.getAgents();
                     if (!agentsOnSpace.isEmpty()) {
                         double circleRadius = tileSize * 0.8;
@@ -123,15 +128,11 @@ public class Render {
         gc.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
         gc.setFill(Color.WHITE);
 
-
         gc.fillText("Ocalali (S): " + data.getSurvivorAmount(), statsStartX, panelStartY + 35);
         gc.fillText("Zakażeni (Z): " + data.getInfectedAmount(), statsStartX, panelStartY + 53);
 
-
         gc.fillText("Walka S - Z: " + data.getSurvivorInfectedInteractions(), statsStartX, panelStartY + 71);
         gc.fillText("Walka S - S: " + data.getSurvivorSurvivorInteractions(), statsStartX, panelStartY + 89);
-
-
 
         statsStartX += 350;
         gc.setFill(Color.web("#25252d"));
@@ -144,7 +145,6 @@ public class Render {
         gc.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
         gc.setFill(Color.WHITE);
 
-
         gc.fillText("Średnie zdrowie: " + String.format("%.1f", data.getMeanHealth()) + " HP", statsStartX, panelStartY + 35);
         gc.fillText("Uleczenia w SafeZone: " + data.getHealedWoundInSafeZones(), statsStartX, panelStartY + 53);
 
@@ -155,6 +155,5 @@ public class Render {
             gc.setFill(Color.LIGHTGREEN);
             gc.fillText("Status ocalałych: Aktywni", statsStartX, panelStartY + 89);
         }
-
     }
 }

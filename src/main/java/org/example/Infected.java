@@ -48,7 +48,7 @@ public class Infected extends Agent {
 
         for (Space space : localArea) {
             if (space.isInSafeZone()) {
-                space.changeWeight(-space.getWeight());
+                space.changeWeight(-10000);
             }
         }
     }

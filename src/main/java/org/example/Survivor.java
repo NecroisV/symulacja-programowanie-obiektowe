@@ -13,7 +13,6 @@ public class Survivor extends Agent {
     private int weaponCapacity = 2;
     private int clothesCapacity = 2;
     private List<Equipment> equipment = new ArrayList<>();
-    private float chanceToHeal;
     private boolean isStarving = false;
 
     public Survivor(int given_x, int given_y, int given_health, int given_strength, int given_FOV, int given_speed) {
