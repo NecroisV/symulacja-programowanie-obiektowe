@@ -25,12 +25,11 @@ public class SimulationEnvironment {
 
     public SimulationEnvironment(int width, int height){
         this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
-        createBoard(width, height);
-        int[] agentNumbers = parameters.getAgentsAmount();
-        createAgents(agentNumbers[0], agentNumbers[1]);
+        createBoard(width, height);         // 1. tworzy pola i ściany (cellular automata)
+        createSafeZones(width, height);     // 2. tworzy strefy bezpieczeństwa
+        createAgents(parameters.getAgentsAmount()[0], parameters.getAgentsAmount()[1]);
         spawnEquipmentOnBoard();
         createResources(parameters.getResourceCount());
-
         data.updateData(this);
     }
 
@@ -59,30 +58,63 @@ public class SimulationEnvironment {
         }
     }
 
+    private static final int INITIAL_WALL_CHANCE = 45; // % szansa na ścianę przy inicjalizacji
+    private static final int SMOOTHING_STEPS = 4;      // liczba iteracji wygładzania
+    private static final int BIRTH_THRESHOLD = 5;      // min sąsiadów żeby pozostać/stać się ścianą
+    private static final int DEATH_THRESHOLD = 4;      // max sąsiadów żeby pozostać wolnym polem
+
     private void createBoard(int width, int height){
         board = new Space[height][width];
+
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width; x++){
                 board[y][x] = new Space(x, y);
-                if(x>0){
+                if(RNG.nextInt(100) < INITIAL_WALL_CHANCE){
+                    board[y][x].createWall();
+                }
+            }
+        }
+
+        for(int step = 0; step < SMOOTHING_STEPS; step++){
+            boolean[][] nextWalls = new boolean[height][width];
+            for(int y = 0; y < height; y++){
+                for(int x = 0; x < width; x++){
+                    int wallNeighbours = countWallNeighbours(x, y, width, height);
+                    if(board[y][x].isItWall()){
+                        // ściana przeżywa jeśli ma wystarczająco dużo sąsiadów
+                        nextWalls[y][x] = wallNeighbours >= DEATH_THRESHOLD;
+                    } else {
+                        // wolne pole staje się ścianą jeśli otoczone ścianami
+                        nextWalls[y][x] = wallNeighbours >= BIRTH_THRESHOLD;
+                    }
+                }
+            }
+            for(int y = 0; y < height; y++){
+                for(int x = 0; x < width; x++){
+                    if(nextWalls[y][x]) board[y][x].createWall();
+                    else board[y][x].destroyWallSilent(); // destroyWall bez notyfikacji SafeZone
+                }
+            }
+        }
+
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
+                if(x > 0){
                     board[y][x].joinLeft(board[y][x-1]);
                     board[y][x-1].joinRight(board[y][x]);
                 }
-                if(x== width -1){
+                if(x == width - 1){
                     board[y][0].joinLeft(board[y][x]);
                     board[y][x].joinRight(board[y][0]);
                 }
-                if(RNG.nextInt(100)>=92) {
-                    board[y][x].createWall();}
             }
-
-            if(y>0){
+            if(y > 0){
                 for(int x = 0; x < width; x++){
                     board[y][x].joinUp(board[y-1][x]);
                     board[y-1][x].joinDown(board[y][x]);
                 }
             }
-            if(y== height -1){
+            if(y == height - 1){
                 for(int x = 0; x < width; x++){
                     board[0][x].joinUp(board[y][x]);
                     board[y][x].joinDown(board[0][x]);
@@ -91,20 +123,196 @@ public class SimulationEnvironment {
         }
     }
 
+    private int countWallNeighbours(int x, int y, int width, int height){
+        int count = 0;
+        for(int dy = -1; dy <= 1; dy++){
+            for(int dx = -1; dx <= 1; dx++){
+                if(dx == 0 && dy == 0) continue;
+                int nx = x + dx;
+                int ny = y + dy;
+                // krawędź planszy traktujemy jako ścianę
+                if(nx < 0 || nx >= width || ny < 0 || ny >= height){
+                    count++;
+                } else if(board[ny][nx].isItWall()){
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+
+    private static final int SAFE_ZONE_COUNT = 2;
+    private static final int SAFE_ZONE_SIZE = 5;      // wewnętrzny rozmiar (bez ścian)
+    private static final float HEAL_CHANCE = 0.25f;
+    private static final float DESTRUCTION_THRESHOLD = 0.5f;
+
+    private void createSafeZones(int width, int height){
+        int attempts = 0;
+        int created = 0;
+
+        while(created < SAFE_ZONE_COUNT && attempts < 100){
+            attempts++;
+
+            int margin = SAFE_ZONE_SIZE + 4; // zwiększony margines z powodu czyszczenia 2 pól
+            int startX = RNG.nextInt(width - margin * 2) + margin;
+            int startY = RNG.nextInt(height - margin * 2) + margin;
+
+            if(safeZoneOverlaps(startX, startY)){
+                continue;
+            }
+
+            SafeZone zone = new SafeZone(HEAL_CHANCE, DESTRUCTION_THRESHOLD);
+
+            // TWORZENIE SAFE ZONE (ze ścianami na obwodzie)
+            for(int dy = -1; dy <= SAFE_ZONE_SIZE; dy++){
+                for(int dx = -1; dx <= SAFE_ZONE_SIZE; dx++){
+                    int nx = startX + dx;
+                    int ny = startY + dy;
+                    if(nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+                    Space space = board[ny][nx];
+                    boolean isPerimeter = (dx == -1 || dx == SAFE_ZONE_SIZE
+                            || dy == -1 || dy == SAFE_ZONE_SIZE);
+
+                    if(isPerimeter){
+                        // obwód = ściana
+                        space.createWall();
+                    } else {
+                        // wnętrze = wolne pole
+                        space.destroyWallSilent();
+                    }
+                    zone.addSpace(space);
+                }
+            }
+
+            // CZYSZCZENIE 2 PÓL DOOKOŁA SAFE ZONE'U
+            // UWAGA: To czyści WSZYSTKIE ściany w promieniu 2 pól od safe zone'u
+            // ale NIE NARUSZA samych ścian safe zone'u!
+            for(int dy = -3; dy <= SAFE_ZONE_SIZE + 2; dy++){
+                for(int dx = -3; dx <= SAFE_ZONE_SIZE + 2; dx++){
+                    int nx = startX + dx;
+                    int ny = startY + dy;
+
+                    // Sprawdź czy pole jest w granicach planszy
+                    if(nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+                    // Sprawdź czy to NIE jest pole należące do safe zone'u
+                    boolean isPartOfSafeZone = false;
+                    for(int szY = -1; szY <= SAFE_ZONE_SIZE; szY++){
+                        for(int szX = -1; szX <= SAFE_ZONE_SIZE; szX++){
+                            if(nx == startX + szX && ny == startY + szY){
+                                isPartOfSafeZone = true;
+                                break;
+                            }
+                        }
+                        if(isPartOfSafeZone) break;
+                    }
+
+                    // Jeśli to nie jest część safe zone'u, usuń ścianę
+                    if(!isPartOfSafeZone && board[ny][nx].isItWall()){
+                        board[ny][nx].destroyWallSilent();
+                    }
+                }
+            }
+
+            // TWORZENIE 4 WEJŚĆ (niszczenie fragmentów ścian na obwodzie)
+            int centerX = startX + SAFE_ZONE_SIZE / 2;
+            int centerY = startY + SAFE_ZONE_SIZE / 2;
+
+            // Wejście północne (górna ściana)
+            int northX = centerX;
+            int northY = startY - 1;
+            if(northX >= 0 && northX < width && northY >= 0 && northY < height){
+                if(board[northY][northX].isItWall()){
+                    board[northY][northX].destroyWallSilent();
+                }
+            }
+
+            // Wejście południowe (dolna ściana)
+            int southX = centerX;
+            int southY = startY + SAFE_ZONE_SIZE;
+            if(southX >= 0 && southX < width && southY >= 0 && southY < height){
+                if(board[southY][southX].isItWall()){
+                    board[southY][southX].destroyWallSilent();
+                }
+            }
+
+            // Wejście zachodnie (lewa ściana)
+            int westX = startX - 1;
+            int westY = centerY;
+            if(westX >= 0 && westX < width && westY >= 0 && westY < height){
+                if(board[westY][westX].isItWall()){
+                    board[westY][westX].destroyWallSilent();
+                }
+            }
+
+            // Wejście wschodnie (prawa ściana)
+            int eastX = startX + SAFE_ZONE_SIZE;
+            int eastY = centerY;
+            if(eastX >= 0 && eastX < width && eastY >= 0 && eastY < height){
+                if(board[eastY][eastX].isItWall()){
+                    board[eastY][eastX].destroyWallSilent();
+                }
+            }
+
+            zone.countWalls();
+            zones.add(zone);
+            created++;
+        }
+    }
+
+    // sprawdza czy nowa strefa nakłada się na istniejące
+    private boolean safeZoneOverlaps(int startX, int startY){
+        for(SafeZone zone : zones){
+            for(Space space : zone.getCoveredSpaces()){
+                int[] pos = space.getPosition();
+                int px = pos[0];
+                int py = pos[1];
+                if(px >= startX - SAFE_ZONE_SIZE - 4 && px <= startX + SAFE_ZONE_SIZE * 2 + 4
+                        && py >= startY - SAFE_ZONE_SIZE - 4 && py <= startY + SAFE_ZONE_SIZE * 2 + 4){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void healSurvivorsInSafeZones(){
+        List<SafeZone> expiredZones = new ArrayList<>();
+
+        for(SafeZone zone : zones){
+            if(zone.updateAndCheckExpiry()){
+                expiredZones.add(zone);
+                turnLogs.add("Strefa bezpieczeństwa została zniszczona!");
+                continue;
+            }
+            for(Space space : new ArrayList<>(zone.getCoveredSpaces())){
+                if(space.isItWall()) continue;
+                for(Agent agent : space.getAgents()){
+                    if(agent instanceof Survivor && agent.isItAlive()){
+                        zone.healSurvivor((Survivor) agent);
+                        data.incHealedWoundInSafeZones();
+                    }
+                }
+            }
+        }
+
+        zones.removeAll(expiredZones);
+    }
+
     private void createResources(int resourceNumber){
         int width = board[0].length;
         int height = board.length;
-
         int i = 0;
-
         while(i < resourceNumber){
-            int x = RNG.nextInt(width -1);
-            int y = RNG.nextInt(height -1);
-            if (!board[y][x].isItWall() && !board[y][x].containsResource()){
+            int x = RNG.nextInt(width - 1);
+            int y = RNG.nextInt(height - 1);
+            if (!board[y][x].isItWall()&& !board[y][x].isInSafeZone() && !board[y][x].containsResource()){
                 environmentalResource resource = new environmentalResource();
                 board[y][x].addResource(resource);
                 resources.add(resource);
-                i ++;
+                i++;
             }
         }
     }
@@ -112,38 +320,40 @@ public class SimulationEnvironment {
     private void createAgents(int survivorNumber, int infectedNumber){
         int width = board[0].length;
         int height = board.length;
-
         int i = 0;
 
         int[] survivorStats = parameters.getSurvivorStats();
         int[] infectedStats = parameters.getInfectedStats();
         int[] EqAndWoundChances = parameters.getEqAndWoundChances();
 
+        // Tworzenie ocalałych
         while(i < survivorNumber){
-            int x = RNG.nextInt(width -1);
-            int y = RNG.nextInt(height -1);
-
-            if (!board[y][x].isItWall()){
+            int x = RNG.nextInt(width - 1);
+            int y = RNG.nextInt(height - 1);
+            if (!board[y][x].isItWall() && !board[y][x].isInSafeZone()){
                 Survivor survivor = new Survivor(x, y, survivorStats[0], survivorStats[1], survivorStats[2], survivorStats[3]);
-                if(RNG.nextInt(100)>EqAndWoundChances[0]){survivor.getEquipment(EquipmentFactory.createWeapon(5,10));}
+                if(RNG.nextInt(100) > EqAndWoundChances[0]){
+                    survivor.getEquipment(EquipmentFactory.createRandom(EquipmentFactory.EquipmentType.WEAPON));
+                }
                 agentList.add(survivor);
                 board[y][x].addAgent(survivor);
-                i ++;
+                i++;
             }
         }
 
+        // Tworzenie zakażonych
         i = 0;
         while(i < infectedNumber){
-            int x = RNG.nextInt(width -1);
-            int y = RNG.nextInt(height -1);
-
-            if (!board[y][x].isItWall()){
+            int x = RNG.nextInt(width - 1);
+            int y = RNG.nextInt(height - 1);
+            if (!board[y][x].isItWall() && !board[y][x].isInSafeZone()){
                 Infected infected = new Infected(x, y, infectedStats[0], infectedStats[1], infectedStats[2], infectedStats[3]);
-                if(RNG.nextInt(100)>EqAndWoundChances[1]){infected.reviveWound();}
-
+                if(RNG.nextInt(100) > EqAndWoundChances[1]){
+                    infected.reviveWound();
+                }
                 agentList.add(infected);
                 board[y][x].addAgent(infected);
-                i ++;
+                i++;
             }
         }
     }
@@ -159,7 +369,6 @@ public class SimulationEnvironment {
                     List<Agent> originalAgents = board[i][j].getAgents();
                     if (!originalAgents.isEmpty()) {
                         List<Agent> copyAgents = new ArrayList<>(originalAgents);
-
                         for(Agent a : copyAgents){
                             if(!usedAgentList.contains(a) && a.isItAlive()) {
                                 usedAgentList.add(a);
@@ -176,11 +385,9 @@ public class SimulationEnvironment {
     private void displaceAgent(int[] originalSpace, int[] targetSpace, Agent a){
         int originalY = originalSpace[0];
         int originalX = originalSpace[1];
-
         int targetX = targetSpace[0];
         int targetY = targetSpace[1];
         board[targetY][targetX].addAgent(a);
-
         board[originalY][originalX].deleteAgent(a);
     }
 
@@ -191,142 +398,114 @@ public class SimulationEnvironment {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Space space = board[y][x];
-
-                if (space != null && !space.isItWall()) {
-                    if (space.getAgents().size() > 1) {
-                        List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
-                        List<Survivor> survivors = new ArrayList<>();
-                        List<Infected> infected = new ArrayList<>();
-
-                        for (Agent a : agentsOnSpace) {
-                            if (a.isItAlive()) {
-                                if (a instanceof Survivor) survivors.add((Survivor) a);
-                                else if (a instanceof Infected) infected.add((Infected) a);
-                            }
-                        }
-
-                        if (infected.isEmpty() && survivors.size() > 1) {
-                            data.incSurvivorSurvivorInteractions();
-
-                            while (survivors.size() > 1) {
-                                Survivor s1 = survivors.get(0);
-                                Survivor s2 = survivors.get(1);
-
-                                int s1Weight = s1.calculateStrength();
-                                int s2Weight = s2.calculateStrength();
-                                int totalWeight = s1Weight + s2Weight;
-
-                                int roll = RNG.nextInt(totalWeight);
-
-                                if (roll < s1Weight) {
-                                    int damage = Math.max(5, s1Weight - (s2Weight / 2));
-                                    s2.changeHealthLevel(-damage);
-                                    s2.reviveWound();
-                                } else {
-                                    int damage = Math.max(5, s2Weight - (s1Weight / 2));
-                                    s1.changeHealthLevel(-damage);
-                                    s1.reviveWound();
-                                }
-
-                                if (!s2.isItAlive() || s2.getHealth() <= 0) {
-                                    turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
-                                    s1.steal(s2);
-                                    s2.die();
-                                    space.deleteAgent(s2);
-                                    survivors.remove(s2);
-                                } else if (!s1.isItAlive() || s1.getHealth() <= 0) {
-                                    turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
-                                    s2.steal(s1);
-                                    s1.die();
-                                    space.deleteAgent(s1);
-                                    survivors.remove(s1);
-                                }
-                            }
-                        }
-
-                        if (!survivors.isEmpty() && !infected.isEmpty()) {
-                            data.incSurvivorInfectedInteractions();
-
-                            while (!survivors.isEmpty() && !infected.isEmpty()) {
-                                Survivor survivor = survivors.get(0);
-                                Infected zakazony = infected.get(0);
-
-                                int zakazonyWeight = zakazony.calculateStrength();
-                                int survivorWeight = survivor.calculateStrength();
-                                int totalWeight = zakazonyWeight + survivorWeight;
-
-                                int roll = RNG.nextInt(totalWeight);
-
-                                if (roll < zakazonyWeight) {
-                                    int damage = Math.max(5, zakazonyWeight - (survivorWeight / 2));
-                                    survivor.changeHealthLevel(-damage);
-                                    if (RNG.nextFloat() < zakazony.getInfectionChance()) {
-                                        boolean isPrevented = false;
-                                        for(Equipment equipment : survivor.getEquipment()){
-                                            if(equipment instanceof Clothes){
-                                                if(((Clothes) equipment).getInfectionPrevention()){
-                                                    isPrevented = true;
-                                                }
-                                            }
-                                        }
-                                        survivor.reviveWound();
-                                        if(!isPrevented) {
-                                            transformSurvivor(survivor, zakazony, x, y);
-                                        }
-                                    }
-                                } else {
-                                    int damage = Math.max(5, survivorWeight - (zakazonyWeight / 2));
-                                    zakazony.changeHealthLevel(-damage);
-                                    zakazony.reviveWound();
-                                }
-
-                                if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
-                                    turnLogs.add("Zakażony na pozycji [" + x + ", " + y + "] został permanentnie zlikwidowany!");
-                                    zakazony.die();
-                                    space.deleteAgent(zakazony);
-                                    infected.remove(zakazony);
-                                }
-
-                                if (!survivor.isItAlive() || survivor.getHealth() <= 0) {
-                                    turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] poległ w walce i zmarł.");
-                                    survivor.die();
-                                    space.deleteAgent(survivor);
-                                    survivors.remove(survivor);
-                                }
-                            }
-                        }
-                    }
-
+                if (!space.isItWall()) {
                     List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
                     List<Survivor> survivors = new ArrayList<>();
+                    List<Infected> infected = new ArrayList<>();
 
                     for (Agent a : agentsOnSpace) {
                         if (a.isItAlive()) {
                             if (a instanceof Survivor) survivors.add((Survivor) a);
+                            else if (a instanceof Infected) infected.add((Infected) a);
                         }
                     }
 
-                    if(!survivors.isEmpty() && space.hasEquipment()) {
-                        survivors.getFirst().pickUpEquipment(space);
+                    // walka Ocalały vs Ocalały — tylko poza SafeZone
+                    if (infected.isEmpty() && survivors.size() > 1 && !space.isInSafeZone()) {
+                        data.incSurvivorSurvivorInteractions();
+                        while (survivors.size() > 1) {
+                            Survivor s1 = survivors.get(0);
+                            Survivor s2 = survivors.get(1);
+                            int s1Weight = s1.calculateStrength();
+                            int s2Weight = s2.calculateStrength();
+                            int roll = RNG.nextInt(s1Weight + s2Weight);
+
+                            if (roll < s1Weight) {
+                                s2.changeHealthLevel(-Math.max(5, s1Weight - (s2Weight / 2)));
+                                s2.reviveWound();
+                            } else {
+                                s1.changeHealthLevel(-Math.max(5, s2Weight - (s1Weight / 2)));
+                                s1.reviveWound();
+                            }
+
+                            if (!s2.isItAlive() || s2.getHealth() <= 0) {
+                                turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
+                                s1.steal(s2); s2.die(); space.deleteAgent(s2); survivors.remove(s2);
+                            } else if (!s1.isItAlive() || s1.getHealth() <= 0) {
+                                turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
+                                s2.steal(s1); s1.die(); space.deleteAgent(s1); survivors.remove(s1);
+                            }
+                        }
+                    }
+
+                    // walka Ocalały vs Zakażony
+                    if (!survivors.isEmpty() && !infected.isEmpty()) {
+                        data.incSurvivorInfectedInteractions();
+                        while (!survivors.isEmpty() && !infected.isEmpty()) {
+                            Survivor survivor = survivors.get(0);
+                            Infected zakazony = infected.get(0);
+                            int zakazonyWeight = zakazony.calculateStrength();
+                            int survivorWeight = survivor.calculateStrength();
+                            int roll = RNG.nextInt(zakazonyWeight + survivorWeight);
+
+                            if (roll < zakazonyWeight) {
+                                survivor.changeHealthLevel(-Math.max(5, zakazonyWeight - (survivorWeight / 2)));
+                                if (RNG.nextFloat() < zakazony.getInfectionChance()) {
+                                    boolean isPrevented = false;
+                                    for(Equipment eq : survivor.getEquipment()){
+                                        if(eq instanceof Clothes && ((Clothes) eq).getInfectionPrevention()){
+                                            isPrevented = true;
+                                        }
+                                    }
+                                    survivor.reviveWound();
+                                    if(!isPrevented){ transformSurvivor(survivor, zakazony, x, y); }
+                                }
+                            } else {
+                                zakazony.changeHealthLevel(-Math.max(5, survivorWeight - (zakazonyWeight / 2)));
+                                zakazony.reviveWound();
+                            }
+
+                            if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
+                                turnLogs.add("Zakażony na pozycji [" + x + ", " + y + "] został zlikwidowany!");
+                                zakazony.die(); space.deleteAgent(zakazony); infected.remove(zakazony);
+                            }
+                            if (!survivor.isItAlive() || survivor.getHealth() <= 0) {
+                                turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] poległ w walce.");
+                                survivor.die(); space.deleteAgent(survivor); survivors.remove(survivor);
+                            }
+                        }
+                    }
+
+                    // podnoszenie ekwipunku i zasobów
+                    List<Agent> afterFight = new ArrayList<>(space.getAgents());
+                    List<Survivor> survivorsAfter = new ArrayList<>();
+                    for (Agent a : afterFight) {
+                        if (a.isItAlive() && a instanceof Survivor) survivorsAfter.add((Survivor) a);
+                    }
+
+                    if(!survivorsAfter.isEmpty() && space.hasEquipment()) {
+                        survivorsAfter.getFirst().pickUpEquipment(space);
                         int[] position = space.getPosition();
                         turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] podniósł ekwipunek");
                     }
-                    if(!survivors.isEmpty() && space.containsResource()){
+                    if(!survivorsAfter.isEmpty() && space.containsResource()){
                         int[] restoredThings = space.getResource().getUsed();
-                        survivors.getFirst().changeEnergyLevel(restoredThings[0]);
-                        survivors.getFirst().changeHealthLevel(restoredThings[1]);
+                        survivorsAfter.getFirst().changeEnergyLevel(restoredThings[0]);
+                        survivorsAfter.getFirst().changeHealthLevel(restoredThings[1]);
                         int[] position = space.getPosition();
-                        turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] podniósł zasoby");
+                        turnLogs.add("Ocalały na pozycji [" + position[0] + ", " + position[1] + "] zebrał zasoby");
                     }
                 }
             }
         }
+
+        // leczenie w SafeZone — po wszystkich interakcjach
+        healSurvivorsInSafeZones();
     }
 
     private void transformSurvivor(Survivor o, Infected z, int x, int y) {
         Infected newInfected = o.transformIntoInfected(z);
-        turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] poległ i zmienił się w Zakażonego!");
-
+        turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] zmienił się w Zakażonego!");
         o.die();
         board[y][x].deleteAgent(o);
         agentList.add(newInfected);
@@ -336,21 +515,17 @@ public class SimulationEnvironment {
     private void deleteDeadAgents() {
         int width = board[0].length;
         int height = board.length;
-
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Space space = board[y][x];
                 if (!space.isItWall()) {
                     List<Agent> agentsOnSpace = new ArrayList<>(space.getAgents());
                     for (Agent a : agentsOnSpace) {
-                        if (!a.isItAlive()) {
-                            space.deleteAgent(a);
-                        }
+                        if (!a.isItAlive()) space.deleteAgent(a);
                     }
                 }
             }
         }
-
         agentList.removeIf(a -> !a.isItAlive());
     }
 
@@ -381,7 +556,7 @@ public class SimulationEnvironment {
         List<Space> freeSpaces = new ArrayList<>();
         for (Space[] row : board) {
             for (Space space : row) {
-                if (!space.isItWall()) {
+                if (!space.isItWall() && !space.isInSafeZone()) {
                     freeSpaces.add(space);
                 }
             }
@@ -390,5 +565,5 @@ public class SimulationEnvironment {
         spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES);
     }
 
-
+    public Space[][] getBoard() { return board; }
 }

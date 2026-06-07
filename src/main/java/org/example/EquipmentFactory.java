@@ -8,10 +8,11 @@ public class EquipmentFactory {
 
     public static Equipment createRandom(EquipmentType type) {
         return switch (type) {
-            case WEAPON -> new Weapon(
-                    RNG.nextInt(5) + 3,   // baseStrength: 3-7
-                    RNG.nextInt(10) + 10  // maxDurability: 10-19
-            );
+            case WEAPON -> {
+                int max = RNG.nextInt(10) + 10;
+                int actual = RNG.nextInt(max) + 1;
+                yield new Weapon(RNG.nextInt(5) + 3, actual, max);
+            }
             case CLOTHES -> {
                 int maxPrevention = RNG.nextInt(5) + 3; // 3-7
                 yield new Clothes(
@@ -24,9 +25,9 @@ public class EquipmentFactory {
         };
     }
 
-    public static Weapon createWeapon(int baseStrength, int maxDurability) {
-        return new Weapon(baseStrength, maxDurability);
-    }
+    public static Weapon createWeapon(int baseStrength, int actualDurability, int maxDurability) {
+        return new Weapon(baseStrength,actualDurability, maxDurability);
+    } //chyba zbędnę bo po aktualizacji używamy createrandom
 
     public static Clothes createClothes(int damageReduction, int energyUseReduction, int maxInfectionPrevention) {
         return new Clothes(damageReduction, energyUseReduction, maxInfectionPrevention, maxInfectionPrevention);
