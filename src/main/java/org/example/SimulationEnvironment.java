@@ -42,6 +42,9 @@ public class SimulationEnvironment {
 
         data.updateData(this);
         render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board, EventManager.getCurrentEvent(), timeOfDay);
+        if(data.getSurvivorAmount()==0){
+            while(True){Systen.out.println(" ");}
+        }
     }
 
     public List<Agent> getAgentList() { return agentList; }
