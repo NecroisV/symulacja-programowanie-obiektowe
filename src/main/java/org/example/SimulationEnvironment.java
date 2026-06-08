@@ -169,7 +169,7 @@ public class SimulationEnvironment {
 
             SafeZone zone = new SafeZone(healChance, destructionThreshold);
 
-            // TWORZENIE SAFE ZONE (ze ścianami na obwodzie)
+            // Tworzenie safe zone (ze ścianami na obwodzie)
             for(int dy = -1; dy <= safeZoneSize; dy++){
                 for(int dx = -1; dx <= safeZoneSize; dx++){
                     int nx = startX + dx;
@@ -191,9 +191,6 @@ public class SimulationEnvironment {
                 }
             }
 
-            // CZYSZCZENIE 2 PÓL DOOKOŁA SAFE ZONE'U
-            // UWAGA: To czyści WSZYSTKIE ściany w promieniu 2 pól od safe zone'u
-            // ale NIE NARUSZA samych ścian safe zone'u!
             for(int dy = -3; dy <= safeZoneSize + 2; dy++){
                 for(int dx = -3; dx <= safeZoneSize + 2; dx++){
                     int nx = startX + dx;
@@ -202,7 +199,7 @@ public class SimulationEnvironment {
                     // Sprawdź czy pole jest w granicach planszy
                     if(nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
 
-                    // Sprawdź czy to NIE jest pole należące do safe zone'u
+                    // Sprawdź czy to nie jest pole należące do safe zone
                     boolean isPartOfSafeZone = false;
                     for(int szY = -1; szY <= safeZoneSize; szY++){
                         for(int szX = -1; szX <= safeZoneSize; szX++){
@@ -214,14 +211,12 @@ public class SimulationEnvironment {
                         if(isPartOfSafeZone) break;
                     }
 
-                    // Jeśli to nie jest część safe zone'u, usuń ścianę
                     if(!isPartOfSafeZone && board[ny][nx].isItWall()){
                         board[ny][nx].destroyWallSilent();
                     }
                 }
             }
 
-            // TWORZENIE 4 WEJŚĆ (niszczenie fragmentów ścian na obwodzie)
             int centerX = startX + safeZoneSize / 2;
             int centerY = startY + safeZoneSize / 2;
 
