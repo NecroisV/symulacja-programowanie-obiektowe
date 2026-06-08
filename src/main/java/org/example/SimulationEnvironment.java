@@ -43,7 +43,7 @@ public class SimulationEnvironment {
         data.updateData(this);
         render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board, EventManager.getCurrentEvent(), timeOfDay);
         if(data.getSurvivorAmount()==0){
-            while(True){Systen.out.println(" ");}
+            while(true){System.out.println(" ");}
         }
     }
 
@@ -313,8 +313,8 @@ public class SimulationEnvironment {
         int height = board.length;
         int i = 0;
         while(i < resourceNumber){
-            int x = RNG.nextInt(width - 1);
-            int y = RNG.nextInt(height - 1);
+            int x = RNG.nextInt(width);
+            int y = RNG.nextInt(height);
             if (!board[y][x].isItWall()&& !board[y][x].isInSafeZone() && !board[y][x].containsResource()){
                 environmentalResource resource = new environmentalResource();
                 board[y][x].addResource(resource);
