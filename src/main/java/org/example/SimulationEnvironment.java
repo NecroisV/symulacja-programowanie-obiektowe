@@ -14,12 +14,12 @@ public class SimulationEnvironment {
     private Set<Agent> usedAgentList = new HashSet<>();
     private List<environmentalResource> resources = new ArrayList<>();
     private int actualTick = 0;
-    private float lightLevel;
-    private TimeOfDay timeOfDay;
     private final SimulationParameters parameters = SimulationParameters.getInstance();
     private DataCollector data = new DataCollector();
     private List<SafeZone> zones = new ArrayList<>();
     private final List<String> turnLogs = new ArrayList<>();
+    private Render render = new Render();
+    private String timeOfDay;
 
     private final EquipmentSpawnStrategy equipmentSpawnStrategy;
 
@@ -41,8 +41,7 @@ public class SimulationEnvironment {
         updateTimeOfDay();
 
         data.updateData(this);
-        Render render = new Render();
-        render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board);
+        render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board, EventManager.getCurrentEvent(), timeOfDay);
     }
 
     public List<Agent> getAgentList() { return agentList; }
@@ -56,12 +55,14 @@ public class SimulationEnvironment {
                 resource.Respawn();
             }
         }
+        if(TimeOfDay.getVisibilityLevel(actualTick)<(1.2+0.5)/2) timeOfDay = "Noc";
+        else timeOfDay = "Dzień";
     }
 
-    private static final int INITIAL_WALL_CHANCE = 45; // % szansa na ścianę przy inicjalizacji
-    private static final int SMOOTHING_STEPS = 4;      // liczba iteracji wygładzania
+    private static final int INITIAL_WALL_CHANCE = 35; // % szansa na ścianę przy inicjalizacji
+    private static final int SMOOTHING_STEPS = 6;      // liczba iteracji wygładzania
     private static final int BIRTH_THRESHOLD = 5;      // min sąsiadów żeby pozostać/stać się ścianą
-    private static final int DEATH_THRESHOLD = 4;      // max sąsiadów żeby pozostać wolnym polem
+    private static final int DEATH_THRESHOLD = 3;      // max sąsiadów żeby pozostać wolnym polem
 
     private void createBoard(int width, int height){
         board = new Space[height][width];
@@ -131,9 +132,11 @@ public class SimulationEnvironment {
                 int nx = x + dx;
                 int ny = y + dy;
                 // krawędź planszy traktujemy jako ścianę
-                if(nx < 0 || nx >= width || ny < 0 || ny >= height){
-                    count++;
-                } else if(board[ny][nx].isItWall()){
+                if (nx < 0) nx = width-1;
+                if (nx >= width) nx = 0;
+                if (ny < 0) ny = height-1;
+                if (ny >= height) ny = 0;
+                if(board[ny][nx].isItWall()){
                     count++;
                 }
             }
@@ -148,7 +151,7 @@ public class SimulationEnvironment {
         int safeZoneCount = parameters.getSafeZoneCount();
         int safeZoneSize = parameters.getSafeZoneSize();
         float healChance = parameters.getHealChance();
-        float destructionThreshold = parameters.getResourceCount();
+        float destructionThreshold = parameters.getDestructionThreshold();
 
         int attempts = 0;
         int created = 0;
@@ -293,7 +296,7 @@ public class SimulationEnvironment {
             for(Space space : new ArrayList<>(zone.getCoveredSpaces())){
                 if(space.isItWall()) continue;
                 for(Agent agent : space.getAgents()){
-                    if(agent instanceof Survivor && agent.isItAlive()){
+                    if(agent instanceof Survivor && agent.isItAlive() && !((Survivor) agent).isStarving()){
                         zone.healSurvivor((Survivor) agent);
                         data.incHealedWoundInSafeZones();
                     }
@@ -425,10 +428,10 @@ public class SimulationEnvironment {
 
                             if (roll < s1Weight) {
                                 s2.changeHealthLevel(-Math.max(5, s1Weight - (s2Weight / 2)));
-                                s2.reviveWound();
+                                if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) s2.reviveWound();
                             } else {
                                 s1.changeHealthLevel(-Math.max(5, s2Weight - (s1Weight / 2)));
-                                s1.reviveWound();
+                                if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) s1.reviveWound();
                             }
 
                             if (!s2.isItAlive() || s2.getHealth() <= 0) {
@@ -445,27 +448,28 @@ public class SimulationEnvironment {
                     if (!survivors.isEmpty() && !infected.isEmpty()) {
                         data.incSurvivorInfectedInteractions();
                         while (!survivors.isEmpty() && !infected.isEmpty()) {
-                            Survivor survivor = survivors.get(0);
-                            Infected zakazony = infected.get(0);
+                            Survivor survivor = survivors.getFirst();
+                            Infected zakazony = infected.getFirst();
                             int zakazonyWeight = zakazony.calculateStrength();
                             int survivorWeight = survivor.calculateStrength();
                             int roll = RNG.nextInt(zakazonyWeight + survivorWeight);
 
                             if (roll < zakazonyWeight) {
                                 survivor.changeHealthLevel(-Math.max(5, zakazonyWeight - (survivorWeight / 2)));
-                                if (RNG.nextFloat() < zakazony.getInfectionChance()) {
+                                if (RNG.nextFloat() < parameters.getHealChance()) zakazony.changeHealthLevel(5);
+                                if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) survivor.reviveWound();
+                                if (RNG.nextFloat() < parameters.getInfectionChance()) {
                                     boolean isPrevented = false;
                                     for(Equipment eq : survivor.getEquipment()){
                                         if(eq instanceof Clothes && ((Clothes) eq).getInfectionPrevention()){
                                             isPrevented = true;
                                         }
                                     }
-                                    survivor.reviveWound();
                                     if(!isPrevented){ transformSurvivor(survivor, zakazony, x, y); }
                                 }
                             } else {
                                 zakazony.changeHealthLevel(-Math.max(5, survivorWeight - (zakazonyWeight / 2)));
-                                zakazony.reviveWound();
+                                if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) zakazony.reviveWound();
                             }
 
                             if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {

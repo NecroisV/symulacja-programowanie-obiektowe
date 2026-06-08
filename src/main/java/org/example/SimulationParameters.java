@@ -7,17 +7,21 @@ public class SimulationParameters {
     private static SimulationParameters instance;
     private int startingSurvivorAmount = 15;
     private int startingInfectedAmount = 700;
-    private float chanceForWoundAfterBattle;
     private Map<String, Integer> moveWeights;
     private int[] startingEqAndWoundChances = new int[]{10, 15}; //EQChance, WouondChance
     private final int simulationSeed = 128;
+
     private int weaponCount = 80;
     private int clothesCount = 80;
     private int resourceCount = 200;
+
     private int safeZoneCount = 2;
     private int safeZoneSize = 5;      // wewnętrzny rozmiar (bez ścian)
-    private float healChance = 0.25f;
     private float destructionThreshold = 0.5f;
+
+    private float healChance = 0.25f;
+    private float infectionChance = 0.25f;
+    private float chanceForWoundAfterBattle = 0.25f;
 
     private int[] survivorStats = new int[]{100, 20, 5, 3}; //health, strength, FOV, speed
     private int[] infectedStats = new int[]{70, 7, 4, 5}; //health, strength, FOV, speed
@@ -26,7 +30,7 @@ public class SimulationParameters {
     //Odpowiednio: szansa na jakikolwiek event, waga BURZY, waga MGŁY, waga TRZĘSIENIA ZIEMI;
     private final double[] eventChances = new double[]{0.3, 10, 20, 2};
     private final int[] eventDuration = new int[]{1, 5}; //min, max
-    private final double earthquakeWallDestroyChance = 0.04;
+    private final double earthquakeWallDestroyChance = 0.05;
     private final double[] fogIntensity =  new double[]{0.2, 0.6}; //min, max;
     private final int[] dayNightCycle = new int[]{15, 7}; //długość dnia, długość nocy (w tickach)
 
@@ -55,9 +59,6 @@ public class SimulationParameters {
         return instance;
     }
 
-    public void loadParameters(){
-
-    }
 
     public int[] getAgentsAmount() {
         return new int[]{startingSurvivorAmount, startingInfectedAmount};
@@ -88,6 +89,9 @@ public class SimulationParameters {
 
     public int getSafeZoneCount(){return safeZoneCount;}
     public int getSafeZoneSize(){return safeZoneSize;}
-    public float getHealChance(){return healChance;}
     public float getDestructionThreshold() {return destructionThreshold;}
+
+    public float getHealChance(){return healChance;}
+    public float getInfectionChance(){return infectionChance;}
+    public float getChanceForWoundAfterBattle(){return chanceForWoundAfterBattle;}
 }

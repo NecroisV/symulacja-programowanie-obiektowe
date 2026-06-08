@@ -8,9 +8,9 @@ public class environmentalResource {
     private boolean isUsed;
 
     public environmentalResource(){
-        energyRecovery = RNG.nextInt(10, 15);
-        healthRecovery = RNG.nextInt(5, 10);
-        minimalRespawnTime = RNG.nextInt(5, 7);
+        energyRecovery = RNG.nextInt(20, 30);
+        healthRecovery = RNG.nextInt(15, 25);
+        minimalRespawnTime = RNG.nextInt(20, 30);
         timeFromUse = -1;
         isUsed = false;
     }
