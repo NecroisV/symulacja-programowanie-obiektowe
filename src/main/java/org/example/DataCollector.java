@@ -7,6 +7,7 @@ public class DataCollector {
     private int survivorSurvivorInteractions = 0;
     private int healedWoundInSafeZones = 0;
     private float meanHealth;
+    private float meanAge;
     private int timeToSurvivorsExtinction = -1;
 
     public DataCollector() {
@@ -16,6 +17,7 @@ public class DataCollector {
         int survivors = 0;
         int infected = 0;
         double totalHealth = 0;
+        double totalAge = 0;
         int totalAgents = 0;
 
         for (Agent a : s.getAgentList()) {
@@ -26,6 +28,7 @@ public class DataCollector {
                     infected++;
                 }
                 totalHealth += a.getHealth();
+                totalAge += a.getAge();
                 totalAgents++;
             }
         }
@@ -33,6 +36,7 @@ public class DataCollector {
         this.survivorAmount = survivors;
         this.infectedAmount = infected;
         this.meanHealth = totalAgents > 0 ? (float) (totalHealth / totalAgents) : 0f;
+        this.meanAge = totalAgents > 0 ? (float) (totalAge / totalAgents) : 0f;
 
         if (survivors == 0 && this.timeToSurvivorsExtinction == -1 && s.getActualTick() > 0) {
             this.timeToSurvivorsExtinction = s.getActualTick();
@@ -49,5 +53,6 @@ public class DataCollector {
     public int getSurvivorSurvivorInteractions() { return survivorSurvivorInteractions; }
     public int getHealedWoundInSafeZones() { return healedWoundInSafeZones; }
     public float getMeanHealth() { return meanHealth; }
+    public float getMeanAge() { return meanAge; }
     public int getTimeToSurvivorsExtinction() { return timeToSurvivorsExtinction; }
 }
