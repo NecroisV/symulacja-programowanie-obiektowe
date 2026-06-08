@@ -55,6 +55,9 @@ public class SimulationEnvironment {
                 resource.Respawn();
             }
         }
+        for(Agent a : agentList){
+            a.ageUp();
+        }
         if(TimeOfDay.getVisibilityLevel(actualTick)<(1.2+0.5)/2) timeOfDay = "Noc";
         else timeOfDay = "Dzień";
     }
