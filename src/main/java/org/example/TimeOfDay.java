@@ -25,9 +25,4 @@ public final class TimeOfDay {
         fogLevel = fog;
     }
 
-    public void main(){
-        for(int i = 0; i < 2*durationTotal; i++){
-            System.out.println(getVisibilityLevel(i));
-        }
-    }
 }

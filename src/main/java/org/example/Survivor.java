@@ -129,7 +129,7 @@ public class Survivor extends Agent {
         }
 
         for (Space space : localArea) {
-            if (space.isInSafeZone()) {
+            if (space.isInSafeZone() && !start.isInSafeZone()) {
                 addWeightWithSpill(space, baseWeights.getOrDefault("survivorSafeZone", 80), weightDivisor);
             }
 

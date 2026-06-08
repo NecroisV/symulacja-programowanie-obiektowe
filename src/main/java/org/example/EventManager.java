@@ -65,9 +65,7 @@ public class EventManager {
         }
     }
 
-
-
-    public void updateTime(){
-
+    public static Event getCurrentEvent(){
+        return currentEvent;
     }
 }

@@ -8,27 +8,52 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Render {
 
-    void renderBoard(GraphicsContext gc, double tileSize, List<String> turnLogs, DataCollector data, int actualTick, Space[][] board) {
+    void renderBoard(GraphicsContext gc, double tileSize, List<String> turnLogs, DataCollector data, int actualTick, Space[][] board, Event currentEvent, String timeOfDay) {
         int width = board[0].length;
         int height = board.length;
+
+        double topPanelHeight = 40;
 
         gc.setFill(Color.web("#1e1e24"));
         gc.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
 
-        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFill(Color.web("#25252d"));
+        gc.fillRect(0, 0, gc.getCanvas().getWidth(), topPanelHeight);
+
         gc.setTextBaseline(VPos.CENTER);
+        gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
+
+        gc.setTextAlign(TextAlignment.LEFT);
+        if(Objects.equals(timeOfDay, "Dzień")) gc.setFill(Color.web("#ffb703"));
+        else gc.setFill(Color.web("#1409e8"));
+        gc.fillText("PORA DNIA: " + (timeOfDay != null ? timeOfDay.toUpperCase() : "BRAK DANYCH"), 20, topPanelHeight / 2);
+
+        gc.setTextAlign(TextAlignment.RIGHT);
+        if (currentEvent != null) {
+            gc.setFill(Color.web("#d90429"));
+            String Event = "";
+            if (currentEvent instanceof Fog) Event = "FOG";
+            else if (currentEvent instanceof Thunderstorm) Event = "THUNDERSTORM";
+            else if (currentEvent instanceof Earthquake) Event = "EARTHQUAKE";
+            gc.fillText("EVENT: " + Event, gc.getCanvas().getWidth() - 20, topPanelHeight / 2);
+        } else {
+            gc.setFill(Color.web("#a7a7a7"));
+            gc.fillText("EVENT: BRAK AKTUALNYCH ZAGROŻEŃ", gc.getCanvas().getWidth() - 20, topPanelHeight / 2);
+        }
+        gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, tileSize * 0.5));
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 double x = j * tileSize;
-                double y = i * tileSize;
+                // Przesunięcie pozycji Y każdego kafelka o wysokość górnego panelu
+                double y = topPanelHeight + (i * tileSize);
                 Space space = board[i][j];
 
-                // RYSOWANIE TŁA
                 if (space.isItWall()) {
                     gc.setFill(Color.web("#ff7e21"));
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
@@ -57,7 +82,7 @@ public class Render {
                     gc.fillRect(x, y, tileSize - 1, tileSize - 1);
                 }
 
-                // RYSOWANIE AGENTÓW (ZAWSZE, NA KAŻDYM POLU NIE-ŚCIANNYM)
+                // RYSOWANIE AGENTÓW
                 if (!space.isItWall()) {
                     List<Agent> agentsOnSpace = space.getAgents();
                     if (!agentsOnSpace.isEmpty()) {
@@ -88,7 +113,8 @@ public class Render {
             }
         }
 
-        double panelStartY = height * tileSize + 20;
+        // Dolny panel również uwzględnia przesunięcie w dół o topPanelHeight
+        double panelStartY = topPanelHeight + (height * tileSize) + 20;
 
         gc.setTextAlign(TextAlignment.LEFT);
         gc.setTextBaseline(VPos.TOP);
@@ -108,7 +134,7 @@ public class Render {
             gc.setFill(Color.web("#ffb703"));
             int displayedLogs = 0;
             for (String log : turnLogs) {
-                if (displayedLogs >= 5) break;
+                if (displayedLogs >= 4) break;
                 gc.fillText("• " + log, 20, logY);
                 logY += 18;
                 displayedLogs++;

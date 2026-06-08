@@ -45,25 +45,35 @@ public abstract class Agent {
             totalWeightSum += w;
         }
 
-        if (totalWeightSum == 0) {
+        int[] targetPosition;
+
+        if (totalWeightSum <= 0) {
             Space bestWorst = availableSpaces.getFirst();
             for(Space s : availableSpaces){
                 if(s.getWeight() > bestWorst.getWeight()) {
                     bestWorst = s;
                 }
             }
-            return bestWorst.getPosition();
+            targetPosition = bestWorst.getPosition();
+        } else {
+            int rolledValue = RNG.nextInt(totalWeightSum);
+            int currentSum = 0;
+            int selectedIndex = availableSpaces.size() - 1;
+            for (int i = 0; i < availableSpaces.size(); i++) {
+                currentSum += validWeights.get(i);
+                if (rolledValue < currentSum) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+            targetPosition = availableSpaces.get(selectedIndex).getPosition();
         }
 
-        int rolledValue = RNG.nextInt(totalWeightSum);
-        int currentSum = 0;
-        for (int i = 0; i < availableSpaces.size(); i++) {
-            currentSum += validWeights.get(i);
-            if (rolledValue < currentSum) {
-                return availableSpaces.get(i).getPosition();
-            }
+        for (Space s : getLocalArea(start)) {
+            s.changeWeight(-s.getWeight());
         }
-        return availableSpaces.getLast().getPosition();
+
+        return targetPosition;
     }
 
     protected void addWeightWithSpill(Space s, int weight, int divisor) {
@@ -268,15 +278,17 @@ public abstract class Agent {
     public int getHealth(){return healthLevel;}
 
     public void healWound() {
+        if (wounds.isEmpty()) return;
         wounds.remove(RNG.nextInt(wounds.size()));
     }
 
     public void reviveWound(){
-        switch (RNG.nextInt(2)){
+        switch (RNG.nextInt(3)){
             case(0) -> wounds.add(new HeadWound());
             case(1) -> wounds.add(new ArmWound());
             case(2) -> wounds.add(new LegWound());
-
         }
     }
+
+    public int getAge(){return age;}
 }

@@ -31,7 +31,7 @@ public class Space {
 
     // teraz zwraca true jeśli pole należy do SafeZone i strefa nie jest zniszczona
     public boolean isInSafeZone(){
-        return safeZone != null && !safeZone.isSafeZoneDestroyed();
+        return safeZone != null;
     }
 
     public void setSafeZone(SafeZone zone) {
