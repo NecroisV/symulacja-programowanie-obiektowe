@@ -172,7 +172,7 @@ public class Render {
         gc.setFill(Color.WHITE);
 
         gc.fillText("Średnie zdrowie: " + String.format("%.1f", data.getMeanHealth()) + " HP", statsStartX, panelStartY + 35);
-        gb.fillText("Średni wiek: " + String.format("%.01f", data.getMeanAge()) + " TICKÓW", startsStartX, panelStartY + 53);
+        gc.fillText("Średni wiek: " + String.format("%.01f", data.getMeanAge()) + " TICKÓW", statsStartX, panelStartY + 53);
         gc.fillText("Uleczenia w SafeZone: " + data.getHealedWoundInSafeZones(), statsStartX, panelStartY + 71);
 
         if (data.getTimeToSurvivorsExtinction() != -1) {
