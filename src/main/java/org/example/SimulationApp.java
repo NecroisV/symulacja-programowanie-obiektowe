@@ -14,7 +14,7 @@ public class SimulationApp extends Application {
     private static final int BOARD_HEIGHT = 60;
     private static final double TILE_SIZE = 20.0;
     private static final double LOGS_HEIGHT = 160.0;
-    double TOP_PANEL_HEIGHT = 40;
+    private static final double TOP_PANEL_HEIGHT = 40;
     private static SimulationEnvironment environment;
 
     public static SimulationEnvironment getEnvironment() {
