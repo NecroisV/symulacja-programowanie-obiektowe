@@ -172,11 +172,12 @@ public class Render {
         gc.setFill(Color.WHITE);
 
         gc.fillText("Średnie zdrowie: " + String.format("%.1f", data.getMeanHealth()) + " HP", statsStartX, panelStartY + 35);
-        gc.fillText("Uleczenia w SafeZone: " + data.getHealedWoundInSafeZones(), statsStartX, panelStartY + 53);
+        gb.fillText("Średni wiek: " + String.format("%.01f", data.getMeanAge()) + " TICKÓW", startsStartX, panelStartY + 53);
+        gc.fillText("Uleczenia w SafeZone: " + data.getHealedWoundInSafeZones(), statsStartX, panelStartY + 71);
 
         if (data.getTimeToSurvivorsExtinction() != -1) {
             gc.setFill(Color.web("#d90429"));
-            gc.fillText("Zagłada ocalałych w turze: " + data.getTimeToSurvivorsExtinction(), statsStartX, panelStartY + 71);
+            gc.fillText("Zagłada ocalałych w turze: " + data.getTimeToSurvivorsExtinction(), statsStartX, panelStartY + 89);
         } else {
             gc.setFill(Color.LIGHTGREEN);
             gc.fillText("Status ocalałych: Aktywni", statsStartX, panelStartY + 89);
