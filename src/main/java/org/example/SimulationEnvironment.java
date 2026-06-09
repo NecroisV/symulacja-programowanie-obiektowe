@@ -24,6 +24,9 @@ public class SimulationEnvironment {
     private final EquipmentSpawnStrategy equipmentSpawnStrategy;
 
     public SimulationEnvironment(int width, int height){
+        SimulationParameters.setProfile(3); // ustawienie profilu pod pokaz
+        parameters.setSeed(128);            // ustawienie seeda
+
         this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
         createBoard(width, height);         // 1. tworzy pola i ściany (cellular automata)
         createSafeZones(width, height);     // 2. tworzy strefy bezpieczeństwa
@@ -33,7 +36,7 @@ public class SimulationEnvironment {
         data.updateData(this);
     }
 
-    public void simulationStep(GraphicsContext gc, double tileSize){
+    public boolean simulationStep(GraphicsContext gc, double tileSize){
         considerRandomEvent();
         moveAgents();
         considerInteractions();
@@ -42,9 +45,8 @@ public class SimulationEnvironment {
 
         data.updateData(this);
         render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board, EventManager.getCurrentEvent(), timeOfDay);
-        if(data.getSurvivorAmount()==0){
-            while(true){System.out.println(" ");}
-        }
+
+        return data.getSurvivorAmount() != 0;
     }
 
     public List<Agent> getAgentList() { return agentList; }
@@ -61,7 +63,8 @@ public class SimulationEnvironment {
         for(Agent a : agentList){
             a.ageUp();
         }
-        if(TimeOfDay.getVisibilityLevel(actualTick)<(1.2+0.5)/2) timeOfDay = "Noc";
+
+        if(TimeOfDay.getVisibilityLevel(actualTick) < 0.57) timeOfDay = "Noc";
         else timeOfDay = "Dzień";
     }
 

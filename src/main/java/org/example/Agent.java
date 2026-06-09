@@ -224,6 +224,9 @@ public abstract class Agent {
             }
         }
         this.healthLevel += amount;
+        if (amount > 0){
+            if (RNG.nextFloat(1)>SimulationParameters.getInstance().getHealChance()) healWound();
+        }
         if (this.healthLevel <= 0) {
             die();
         }

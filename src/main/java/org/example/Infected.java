@@ -31,12 +31,12 @@ public class Infected extends Agent {
                         addWeightWithSpill(space, baseWeights.getOrDefault("infectedCurrentSeenSurvivor", 100), weightDivisor);
                     } else if (a instanceof Infected && a != this) {
                         addWeightWithSpill(space, baseWeights.getOrDefault("infectedCloseInfected", 5), weightDivisor);
-                        space.changeWeight(-100 * Math.abs(space.getWeight()));
+                        space.changeWeight(-256128 - space.getWeight());
                     }
                 }
             }
             if (space.isInSafeZone()) {
-                space.changeWeight(-100 * Math.abs(space.getWeight()));
+                space.changeWeight(-1000 * Math.abs(space.getWeight()));
             }
         }
     }

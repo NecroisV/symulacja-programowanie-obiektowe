@@ -39,13 +39,18 @@ public class SimulationApp extends Application {
 
         new AnimationTimer() {
             private long lastUpdate = 0;
-
             private final long TICK_RATE = 256000000;
 
             @Override
             public void handle(long now) {
                 if (now - lastUpdate >= TICK_RATE) {
-                    environment.simulationStep(gc, TILE_SIZE);
+                    boolean running = environment.simulationStep(gc, TILE_SIZE);
+
+                    if (!running) {
+                        this.stop();
+                        System.out.println("Symulacja zakończona: wszyscy ocalali zginęli.");
+                    }
+
                     lastUpdate = now;
                 }
             }
