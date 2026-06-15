@@ -18,7 +18,7 @@ public final class TimeOfDay {
     private static int durationDay = SimulationParameters.getInstance().getDayNightCycle()[0];
 
     /** Czas trwania fazy nocnej wyrażony w tickach symulacji. */
-    private static int durationNight = SimulationParameters.getInstance().getDayNightCycle()[0];
+    private static int durationNight = SimulationParameters.getInstance().getDayNightCycle()[1];
 
     /** Łączny czas trwania pełnego cyklu dobowego (dzień + noc) w tickach. */
     private static int durationTotal = durationDay + durationNight;
