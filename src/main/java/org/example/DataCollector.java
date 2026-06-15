@@ -1,5 +1,6 @@
 package org.example;
 
+// Klasa zbierająca dane statystyczne z symulacji
 public class DataCollector {
     private int survivorAmount;
     private int infectedAmount;
@@ -8,11 +9,12 @@ public class DataCollector {
     private int healedWoundInSafeZones = 0;
     private float meanHealth;
     private float meanAge;
-    private int timeToSurvivorsExtinction = -1;
+    private int timeToSurvivorsExtinction = -1; // Tick wyginięcia ocalałych (-1 = jeszcze żyją)
 
     public DataCollector() {
     }
 
+    // Aktualizuje wszystkie dane na podstawie aktualnego stanu symulacji
     public void updateData(SimulationEnvironment s) {
         int survivors = 0;
         int infected = 0;
@@ -20,6 +22,7 @@ public class DataCollector {
         double totalAge = 0;
         int totalAgents = 0;
 
+        // Zliczanie agentów i sumowanie statystyk
         for (Agent a : s.getAgentList()) {
             if (a.isItAlive()) {
                 if (a instanceof Survivor) {
@@ -38,15 +41,18 @@ public class DataCollector {
         this.meanHealth = totalAgents > 0 ? (float) (totalHealth / totalAgents) : 0f;
         this.meanAge = totalAgents > 0 ? (float) (totalAge / totalAgents) : 0f;
 
+        // Zapisz tick wyginięcia jeśli właśnie wyginęli
         if (survivors == 0 && this.timeToSurvivorsExtinction == -1 && s.getActualTick() > 0) {
             this.timeToSurvivorsExtinction = s.getActualTick();
         }
     }
 
+    // Inkrementatory dla interakcji
     public void incSurvivorInfectedInteractions() { this.survivorInfectedInteractions++; }
     public void incSurvivorSurvivorInteractions() { this.survivorSurvivorInteractions++; }
     public void incHealedWoundInSafeZones() { this.healedWoundInSafeZones++; }
 
+    // Gettery
     public int getSurvivorAmount() { return survivorAmount; }
     public int getInfectedAmount() { return infectedAmount; }
     public int getSurvivorInfectedInteractions() { return survivorInfectedInteractions; }

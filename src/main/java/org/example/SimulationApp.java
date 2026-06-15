@@ -8,6 +8,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+// Główna klasa aplikacji JavaFX - uruchamia okno i pętlę symulacji
 public class SimulationApp extends Application {
 
     private static final int BOARD_WIDTH = 90;
@@ -17,6 +18,7 @@ public class SimulationApp extends Application {
     private static final double TOP_PANEL_HEIGHT = 40;
     private static SimulationEnvironment environment;
 
+    // Zwraca środowisko symulacji (lazy initialization)
     public static SimulationEnvironment getEnvironment() {
         if(environment == null){
             environment = new SimulationEnvironment(BOARD_WIDTH, BOARD_HEIGHT);
@@ -37,9 +39,10 @@ public class SimulationApp extends Application {
         StackPane root = new StackPane(canvas);
         Scene scene = new Scene(root, canvasWidth, canvasHeight);
 
+        // AnimationTimer - wykonuje ticki symulacji co ~256ms
         new AnimationTimer() {
             private long lastUpdate = 0;
-            private final long TICK_RATE = 256000000;
+            private final long TICK_RATE = 256000000;  // ~4 ticki na sekundę
 
             @Override
             public void handle(long now) {
