@@ -3,6 +3,7 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 
+// Pojedyncze pole na planszy - może zawierać ścianę, agentów, ekwipunek, zasoby
 public class Space {
     private int x;
     private int y;
@@ -16,7 +17,7 @@ public class Space {
     private Space down;
     private Space left;
 
-    private int weigth = 1;
+    private int weigth = 1;  // Waga dla systemu poruszania się agentów
 
     private SafeZone safeZone = null;
 
@@ -29,7 +30,7 @@ public class Space {
         isWall = true;
     }
 
-    // teraz zwraca true jeśli pole należy do SafeZone i strefa nie jest zniszczona
+    // Sprawdza czy pole należy do strefy bezpieczeństwa (niezniszczonej)
     public boolean isInSafeZone(){
         return safeZone != null;
     }
@@ -44,19 +45,20 @@ public class Space {
 
     public boolean isItWall(){return isWall;}
 
+    // Niszczy ścianę i powiadamia strefę bezpieczeństwa (jeśli należy)
     public void destroyWall(){
-        // jeśli ściana należy do SafeZone — zgłoś zniszczenie
         if (isWall && safeZone != null) {
             safeZone.commitWallDestruction();
         }
         this.isWall = false;
     }
 
-    // niszczy ścianę bez notyfikowania SafeZone — używane podczas budowania planszy
+    // Niszczy ścianę bez powiadamiania (używane przy generowaniu planszy)
     public void destroyWallSilent(){
         this.isWall = false;
     }
 
+    // Łączenia sąsiednich pól (dla nawigacji)
     public void joinUp(Space given_up){ up = given_up; }
     public void joinRight(Space given_right){ right = given_right; }
     public void joinDown(Space given_down){ down = given_down; }
@@ -73,6 +75,7 @@ public class Space {
     public Space getDown(){ return down; }
     public Space getLeft(){ return left; }
 
+    // Sprawdza czy pole zawiera niewykorzystany zasób
     public boolean containsResource(){
         return resource != null && !resource.wasUsed();
     }
@@ -85,9 +88,9 @@ public class Space {
     public int getWeight(){ return weigth; }
 
     public void addEquipment(Equipment equipment){ equipmentOnGround.add(equipment); }
-
     public boolean hasEquipment(){ return !equipmentOnGround.isEmpty(); }
 
+    // Zabiera pierwszy przedmiot z ziemi
     public Equipment pickUpEquipment(){
         if (!equipmentOnGround.isEmpty()){
             return equipmentOnGround.removeFirst();

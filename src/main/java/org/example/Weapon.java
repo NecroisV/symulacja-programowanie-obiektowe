@@ -1,5 +1,6 @@
 package org.example;
 
+// Broń jako ekwipunek - zwiększa siłę ataku i traci wytrzymałość przy użyciu
 public class Weapon extends Equipment {
     private int baseStrength;
     private int actualDurability;
@@ -7,11 +8,12 @@ public class Weapon extends Equipment {
 
     public Weapon(int baseStrength, int actualDurability, int maxDurability)
     {
-     this.baseStrength = baseStrength;
-     this.actualDurability = actualDurability;
-     this.maxDurability = maxDurability;
+        this.baseStrength = baseStrength;
+        this.actualDurability = actualDurability;
+        this.maxDurability = maxDurability;
     }
 
+    // Zmniejsza wytrzymałość przy użyciu
     public void loseDurability()
     {
         if(actualDurability >0)
@@ -20,6 +22,7 @@ public class Weapon extends Equipment {
         }
     }
 
+    // Oblicza aktualną siłę broni (proporcjonalna do wytrzymałości)
     public int calculateActualStrength()
     {
         if(maxDurability ==0) {return 0;}
@@ -29,35 +32,13 @@ public class Weapon extends Equipment {
         }
     }
 
-    public int getBaseStrength()
-    {
-        return baseStrength;
-    }
-
-    public void setBaseStrength(int newStrength)
-    {
-        this.baseStrength = newStrength;
-    }
-
-    public int getActualDurability()
-    {
-        return actualDurability;
-    }
-
-    public void setActualDurability(int newDurability)
-    {
-        this.actualDurability = Math.max(0, Math.min(newDurability, maxDurability));
-    }
-
-    public int getMaxDurability()
-    {
-        return maxDurability;
-    }
-
-    public void setMaxDurability(int maxDurability)
-    {
-        this.maxDurability = maxDurability;
-    }
+    // Gettery i settery
+    public int getBaseStrength() { return baseStrength; }
+    public void setBaseStrength(int newStrength) { this.baseStrength = newStrength; }
+    public int getActualDurability() { return actualDurability; }
+    public void setActualDurability(int newDurability) { this.actualDurability = Math.max(0, Math.min(newDurability, maxDurability)); }
+    public int getMaxDurability() { return maxDurability; }
+    public void setMaxDurability(int maxDurability) { this.maxDurability = maxDurability; }
 
     @Override
     public String toString()

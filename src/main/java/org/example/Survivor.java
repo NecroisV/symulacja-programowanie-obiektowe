@@ -7,6 +7,7 @@ import java.util.Map;
 import static java.lang.Math.max;
 import static java.lang.Math.round;
 
+// Ocalały agent - zbiera zasoby, unika zakażonych, walczy, może się przemienić
 public class Survivor extends Agent {
     private int energyLevel = 100;
     private int maxEnergyLevel = energyLevel;
@@ -19,6 +20,7 @@ public class Survivor extends Agent {
         super(given_x, given_y, given_health, given_strength, given_FOV, given_speed);
     }
 
+    // Zmienia poziom energii (z ograniczeniem do max)
     public void changeEnergyLevel(int amount) {
         energyLevel += amount;
         if (energyLevel > maxEnergyLevel) energyLevel = maxEnergyLevel;
@@ -29,6 +31,7 @@ public class Survivor extends Agent {
         }
     }
 
+    // Głodowanie - zadaje obrażenia co tick
     public void starve() {
         if(isStarving){
             this.changeHealthLevel(-2);
@@ -39,6 +42,7 @@ public class Survivor extends Agent {
         return isStarving;
     }
 
+    // Okrada innego ocalałego (energia i ekwipunek)
     public void steal(Survivor loser) {
         int stolenEnergy = loser.getEnergyLevel() - 10;
         this.changeEnergyLevel(Math.max(stolenEnergy, 10));
@@ -59,11 +63,13 @@ public class Survivor extends Agent {
         return this.equipment;
     }
 
+    // Przemienia ocalałego w zakażonego (połowa zdrowia zakażonego)
     public Infected transformIntoInfected(Infected i) {
         int[] position = getPosition();
         return new Infected(position[0], position[1], (int) round(i.getHealth() / 2.0), i.calculateStrength(), i.calculateFOV(), i.calculateSpeed());
     }
 
+    // Zwraca ekwipunek danego typu (broń lub ubrania)
     public <T extends Equipment> List<T> getEquipmentOfType(Class<T> type) {
         return equipment.stream()
                 .filter(type::isInstance)
@@ -71,6 +77,7 @@ public class Survivor extends Agent {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    // Podnosi ekwipunek z pola (sprawdza limity miejsca)
     public boolean pickUpEquipment(Space space) {
         Equipment item = space.pickUpEquipment();
         if (item == null) return false;
@@ -88,6 +95,7 @@ public class Survivor extends Agent {
         return true;
     }
 
+    // Dodaje ekwipunek bezpośrednio (przy starcie)
     public void getEquipment(Equipment item){
         if(item instanceof Weapon && getEquipmentOfType(Weapon.class).size() >= weaponCapacity){
             equipment.add(item);
@@ -97,6 +105,7 @@ public class Survivor extends Agent {
         }
     }
 
+    // Sprawdza czy jest miejsce w ekwipunku na dany przedmiot
     public boolean hasSpaceInInventory(Equipment item) {
         if (item instanceof Weapon) {
             return getEquipmentOfType(Weapon.class).size() < weaponCapacity;
@@ -111,6 +120,7 @@ public class Survivor extends Agent {
         return energyLevel;
     }
 
+    // Oblicza wagi dla pól - ocaleni unikają zakażonych, szukają zasobów, ekwipunku i stref bezpieczeństwa
     @Override
     public void getAgentWeights(Space start, Map<String, Integer> baseWeights, int weightDivisor) {
         int currentEnergy = getEnergyLevel();
@@ -123,20 +133,24 @@ public class Survivor extends Agent {
         List<Space> seenAgents = thingsAgentSaw.get(1);
         List<Space> seenEquipment = thingsAgentSaw.get(2);
 
+        // Reset wag w lokalnym obszarze
         for (Space space : localArea) {
             space.changeWeight(-space.getWeight());
             space.changeWeight(1);
         }
 
         for (Space space : localArea) {
+            // Preferowanie stref bezpieczeństwa (jeśli nie jest się w jednej)
             if (space.isInSafeZone() && !start.isInSafeZone()) {
                 addWeightWithSpill(space, baseWeights.getOrDefault("survivorSafeZone", 80), weightDivisor);
             }
 
+            // Preferowanie zasobów
             if (seenResources.contains(space)) {
                 addWeightWithSpill(space, baseWeights.getOrDefault("survivorResource", 30), weightDivisor);
             }
 
+            // Preferowanie ekwipunku (tylko jeśli jest miejsce)
             if (seenEquipment.contains(space)) {
                 for (Equipment equipment : space.getEquipmentOnGround()) {
                     if (this.hasSpaceInInventory(equipment)) {
@@ -145,15 +159,17 @@ public class Survivor extends Agent {
                 }
             }
 
+            // Reakcja na widzianych agentów
             if (seenAgents.contains(space)) {
                 for (Agent a : space.getAgents()) {
                     if (a instanceof Infected) {
+                        // Unikanie zakażonych (strach zmniejszany przez siłę)
                         int baseFear = baseWeights.getOrDefault("survivorInfected", -100);
                         int fearReduction = strength * 10;
                         int finalInfectedWeight = Math.min(0, baseFear + fearReduction);
-
                         addWeightWithSpill(space, finalInfectedWeight, weightDivisor);
                     } else if (a instanceof Survivor && a != this) {
+                        // Unikanie innych ocalałych (szczególnie gdy niska energia)
                         int baseSurvivorWeight = baseWeights.getOrDefault("survivorSurvivor", -20);
                         if (currentEnergy < 40) {
                             baseSurvivorWeight += (currentEnergy) * 2;

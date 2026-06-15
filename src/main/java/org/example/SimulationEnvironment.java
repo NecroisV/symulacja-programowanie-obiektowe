@@ -7,75 +7,86 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
+// Główne środowisko symulacji - zarządza planszą, agentami, zasobami i główną pętlą
 public class SimulationEnvironment {
     private static SimulationEnvironment instance;
-    private Space[][] board;
-    private List<Agent> agentList = new ArrayList<>();
-    private Set<Agent> usedAgentList = new HashSet<>();
-    private List<environmentalResource> resources = new ArrayList<>();
-    private int actualTick = 0;
+    private Space[][] board;                           // Plansza symulacji
+    private List<Agent> agentList = new ArrayList<>(); // Lista wszystkich agentów
+    private Set<Agent> usedAgentList = new HashSet<>(); // Zbiór agentów którzy już się poruszyli w ticku
+    private List<environmentalResource> resources = new ArrayList<>(); // Zasoby na mapie
+    private int actualTick = 0;                        // Aktualny tick symulacji
     private final SimulationParameters parameters = SimulationParameters.getInstance();
-    private DataCollector data = new DataCollector();
-    private List<SafeZone> zones = new ArrayList<>();
-    private final List<String> turnLogs = new ArrayList<>();
-    private Render render = new Render();
-    private String timeOfDay;
+    private DataCollector data = new DataCollector();  // Zbieracz danych statystycznych
+    private List<SafeZone> zones = new ArrayList<>();   // Lista stref bezpieczeństwa
+    private final List<String> turnLogs = new ArrayList<>(); // Logi wydarzeń z tury
+    private Render render = new Render();               // Renderer widoku
+    private String timeOfDay;                           // Aktualna pora dnia (Dzień/Noc)
 
-    private final EquipmentSpawnStrategy equipmentSpawnStrategy;
+    private final EquipmentSpawnStrategy equipmentSpawnStrategy; // Strategia rozmieszczania ekwipunku
 
+    // Konstruktor - inicjalizuje wszystko od zera
     public SimulationEnvironment(int width, int height){
         SimulationParameters.setProfile(3); // ustawienie profilu pod pokaz
-        parameters.setSeed(128);            // ustawienie seeda
+        parameters.setSeed(128);            // ustawienie seeda dla determinizmu
 
         this.equipmentSpawnStrategy = this::spawnEquipmentRandomly;
         createBoard(width, height);         // 1. tworzy pola i ściany (cellular automata)
         createSafeZones(width, height);     // 2. tworzy strefy bezpieczeństwa
-        createAgents(parameters.getAgentsAmount()[0], parameters.getAgentsAmount()[1]);
-        spawnEquipmentOnBoard();
-        createResources(parameters.getResourceCount());
-        data.updateData(this);
+        createAgents(parameters.getAgentsAmount()[0], parameters.getAgentsAmount()[1]); // 3. tworzy agentów
+        spawnEquipmentOnBoard();            // 4. rozmieszcza ekwipunek
+        createResources(parameters.getResourceCount()); // 5. tworzy zasoby
+        data.updateData(this);              // 6. inicjalna aktualizacja danych
     }
 
+    // Główna metoda symulacji - wykonuje jeden tick symulacji
     public boolean simulationStep(GraphicsContext gc, double tileSize){
-        considerRandomEvent();
-        moveAgents();
-        considerInteractions();
-        deleteDeadAgents();
-        updateTimeOfDay();
+        considerRandomEvent();      // 1. Sprawdza czy wystąpiło zdarzenie losowe
+        moveAgents();               // 2. Porusza wszystkimi agentami
+        considerInteractions();     // 3. Rozpatruje walki i interakcje
+        deleteDeadAgents();         // 4. Usuwa martwych agentów
+        updateTimeOfDay();          // 5. Aktualizuje porę dnia i zasoby
 
-        data.updateData(this);
+        data.updateData(this);      // Zbiera dane statystyczne
         render.renderBoard(gc, tileSize, turnLogs, data, actualTick, board, EventManager.getCurrentEvent(), timeOfDay);
 
-        return data.getSurvivorAmount() != 0;
+        return data.getSurvivorAmount() != 0; // true jeśli ocalali jeszcze żyją
     }
 
+    // Gettery
     public List<Agent> getAgentList() { return agentList; }
     public int getActualTick() { return this.actualTick; }
 
+    // Aktualizuje porę dnia, odnawia zasoby, zwiększa wiek agentów
     private void updateTimeOfDay(){
         actualTick++;
+        // Odnawianie zasobów (respawn po czasie)
         for(environmentalResource resource : resources){
             if(resource.wasUsed()) {
                 resource.updateTime();
                 resource.Respawn();
             }
         }
+        // Zwiększenie wieku wszystkich agentów
         for(Agent a : agentList){
             a.ageUp();
         }
 
+        // Określenie pory dnia na podstawie widoczności (0.57 to próg dzień/noc)
         if(TimeOfDay.getVisibilityLevel(actualTick) < 0.57) timeOfDay = "Noc";
         else timeOfDay = "Dzień";
     }
 
+    // Stałe dla algorytmu cellular automata (generowanie ścian)
     private static final int INITIAL_WALL_CHANCE = 35; // % szansa na ścianę przy inicjalizacji
     private static final int SMOOTHING_STEPS = 6;      // liczba iteracji wygładzania
     private static final int BIRTH_THRESHOLD = 5;      // min sąsiadów żeby pozostać/stać się ścianą
     private static final int DEATH_THRESHOLD = 3;      // max sąsiadów żeby pozostać wolnym polem
 
+    // Tworzy planszę z użyciem algorytmu cellular automata
     private void createBoard(int width, int height){
         board = new Space[height][width];
 
+        // Inicjalizacja losowych ścian
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width; x++){
                 board[y][x] = new Space(x, y);
@@ -85,6 +96,7 @@ public class SimulationEnvironment {
             }
         }
 
+        // Wygładzanie mapy (iteracyjne)
         for(int step = 0; step < SMOOTHING_STEPS; step++){
             boolean[][] nextWalls = new boolean[height][width];
             for(int y = 0; y < height; y++){
@@ -99,16 +111,19 @@ public class SimulationEnvironment {
                     }
                 }
             }
+            // Zastosowanie nowej mapy ścian
             for(int y = 0; y < height; y++){
                 for(int x = 0; x < width; x++){
                     if(nextWalls[y][x]) board[y][x].createWall();
-                    else board[y][x].destroyWallSilent(); // destroyWall bez notyfikacji SafeZone
+                    else board[y][x].destroyWallSilent();
                 }
             }
         }
 
+        // Łączenie sąsiednich pól (dla nawigacji w BFS)
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width; x++){
+                // Połączenia poziome (lewo-prawo z zawijaniem)
                 if(x > 0){
                     board[y][x].joinLeft(board[y][x-1]);
                     board[y][x-1].joinRight(board[y][x]);
@@ -118,6 +133,7 @@ public class SimulationEnvironment {
                     board[y][x].joinRight(board[y][0]);
                 }
             }
+            // Połączenia pionowe (góra-dół z zawijaniem)
             if(y > 0){
                 for(int x = 0; x < width; x++){
                     board[y][x].joinUp(board[y-1][x]);
@@ -133,6 +149,7 @@ public class SimulationEnvironment {
         }
     }
 
+    // Liczy sąsiadów-ścian dla pola (włącznie z przekątnymi)
     private int countWallNeighbours(int x, int y, int width, int height){
         int count = 0;
         for(int dy = -1; dy <= 1; dy++){
@@ -140,7 +157,7 @@ public class SimulationEnvironment {
                 if(dx == 0 && dy == 0) continue;
                 int nx = x + dx;
                 int ny = y + dy;
-                // krawędź planszy traktujemy jako ścianę
+                // krawędź planszy traktujemy jako ścianę (zawijanie)
                 if (nx < 0) nx = width-1;
                 if (nx >= width) nx = 0;
                 if (ny < 0) ny = height-1;
@@ -153,9 +170,7 @@ public class SimulationEnvironment {
         return count;
     }
 
-
-
-
+    // Tworzy strefy bezpieczeństwa na planszy
     private void createSafeZones(int width, int height){
         int safeZoneCount = parameters.getSafeZoneCount();
         int safeZoneSize = parameters.getSafeZoneSize();
@@ -165,6 +180,7 @@ public class SimulationEnvironment {
         int attempts = 0;
         int created = 0;
 
+        // Próba utworzenia zadanej liczby stref (max 100 prób)
         while(created < safeZoneCount && attempts < 100){
             attempts++;
 
@@ -172,6 +188,7 @@ public class SimulationEnvironment {
             int startX = RNG.nextInt(width - margin * 2) + margin;
             int startY = RNG.nextInt(height - margin * 2) + margin;
 
+            // Sprawdź czy nowa strefa nie nachodzi na istniejącą
             if(safeZoneOverlaps(startX, startY)){
                 continue;
             }
@@ -200,6 +217,7 @@ public class SimulationEnvironment {
                 }
             }
 
+            // Czyszczenie ścian wokół strefy (bufor dla przejścia)
             for(int dy = -3; dy <= safeZoneSize + 2; dy++){
                 for(int dx = -3; dx <= safeZoneSize + 2; dx++){
                     int nx = startX + dx;
@@ -220,6 +238,7 @@ public class SimulationEnvironment {
                         if(isPartOfSafeZone) break;
                     }
 
+                    // Usuń ścianę jeśli nie należy do strefy
                     if(!isPartOfSafeZone && board[ny][nx].isItWall()){
                         board[ny][nx].destroyWallSilent();
                     }
@@ -229,6 +248,7 @@ public class SimulationEnvironment {
             int centerX = startX + safeZoneSize / 2;
             int centerY = startY + safeZoneSize / 2;
 
+            // Tworzenie 4 wejść do strefy (N,S,W,E)
             // Wejście północne (górna ściana)
             int northX = centerX;
             int northY = startY - 1;
@@ -265,13 +285,13 @@ public class SimulationEnvironment {
                 }
             }
 
-            zone.countWalls();
+            zone.countWalls();  // Zlicz ściany do monitorowania zniszczeń
             zones.add(zone);
             created++;
         }
     }
 
-    // sprawdza czy nowa strefa nakłada się na istniejące
+    // Sprawdza czy nowa strefa nakłada się na istniejące
     private boolean safeZoneOverlaps(int startX, int startY){
         int safeZoneSize = parameters.getSafeZoneSize();
         for(SafeZone zone : zones){
@@ -288,15 +308,18 @@ public class SimulationEnvironment {
         return false;
     }
 
+    // Leczy ocalałych w strefach bezpieczeństwa i usuwa wygasłe strefy
     private void healSurvivorsInSafeZones(){
         List<SafeZone> expiredZones = new ArrayList<>();
 
         for(SafeZone zone : zones){
+            // Sprawdź czy strefa wygasła lub została zniszczona
             if(zone.updateAndCheckExpiry()){
                 expiredZones.add(zone);
                 turnLogs.add("Strefa bezpieczeństwa została zniszczona!");
                 continue;
             }
+            // Leczenie ocalałych w strefie
             for(Space space : new ArrayList<>(zone.getCoveredSpaces())){
                 if(space.isItWall()) continue;
                 for(Agent agent : space.getAgents()){
@@ -311,6 +334,7 @@ public class SimulationEnvironment {
         zones.removeAll(expiredZones);
     }
 
+    // Tworzy zasoby (jedzenie/leczenie) na planszy
     private void createResources(int resourceNumber){
         int width = board[0].length;
         int height = board.length;
@@ -318,6 +342,7 @@ public class SimulationEnvironment {
         while(i < resourceNumber){
             int x = RNG.nextInt(width);
             int y = RNG.nextInt(height);
+            // Zasoby tylko na wolnych polach, poza strefami bezpieczeństwa
             if (!board[y][x].isItWall()&& !board[y][x].isInSafeZone() && !board[y][x].containsResource()){
                 environmentalResource resource = new environmentalResource();
                 board[y][x].addResource(resource);
@@ -327,6 +352,7 @@ public class SimulationEnvironment {
         }
     }
 
+    // Tworzy początkową populację agentów (ocalałych i zakażonych)
     private void createAgents(int survivorNumber, int infectedNumber){
         int width = board[0].length;
         int height = board.length;
@@ -342,6 +368,7 @@ public class SimulationEnvironment {
             int y = RNG.nextInt(height - 1);
             if (!board[y][x].isItWall() && !board[y][x].isInSafeZone()){
                 Survivor survivor = new Survivor(x, y, survivorStats[0], survivorStats[1], survivorStats[2], survivorStats[3]);
+                // Szansa na posiadanie broni na starcie
                 if(RNG.nextInt(100) > EqAndWoundChances[0]){
                     survivor.getEquipment(EquipmentFactory.createRandom(EquipmentFactory.EquipmentType.WEAPON));
                 }
@@ -358,6 +385,7 @@ public class SimulationEnvironment {
             int y = RNG.nextInt(height - 1);
             if (!board[y][x].isItWall() && !board[y][x].isInSafeZone()){
                 Infected infected = new Infected(x, y, infectedStats[0], infectedStats[1], infectedStats[2], infectedStats[3]);
+                // Szansa na posiadanie rany na starcie
                 if(RNG.nextInt(100) > EqAndWoundChances[1]){
                     infected.reviveWound();
                 }
@@ -368,6 +396,7 @@ public class SimulationEnvironment {
         }
     }
 
+    // Porusza wszystkimi agentami (każdy wykonuje swój ruch)
     private void moveAgents(){
         int width = board[0].length;
         int height = board.length;
@@ -380,6 +409,7 @@ public class SimulationEnvironment {
                     if (!originalAgents.isEmpty()) {
                         List<Agent> copyAgents = new ArrayList<>(originalAgents);
                         for(Agent a : copyAgents){
+                            // Upewnij się że każdy agent poruszy się tylko raz w ticku
                             if(!usedAgentList.contains(a) && a.isItAlive()) {
                                 usedAgentList.add(a);
                                 int[] agentMove = a.makeMove(board[i][j], parameters.getMoveWeights(), 2);
@@ -392,6 +422,7 @@ public class SimulationEnvironment {
         }
     }
 
+    // Przesuwa agenta z oryginalnego pola na docelowe
     private void displaceAgent(int[] originalSpace, int[] targetSpace, Agent a){
         int originalY = originalSpace[0];
         int originalX = originalSpace[1];
@@ -401,6 +432,7 @@ public class SimulationEnvironment {
         board[originalY][originalX].deleteAgent(a);
     }
 
+    // Rozpatruje wszystkie interakcje między agentami (walki, podnoszenie przedmiotów)
     private void considerInteractions() {
         int width = board[0].length;
         int height = board.length;
@@ -413,6 +445,7 @@ public class SimulationEnvironment {
                     List<Survivor> survivors = new ArrayList<>();
                     List<Infected> infected = new ArrayList<>();
 
+                    // Podział agentów na ocalałych i zakażonych
                     for (Agent a : agentsOnSpace) {
                         if (a.isItAlive()) {
                             if (a instanceof Survivor) survivors.add((Survivor) a);
@@ -438,6 +471,7 @@ public class SimulationEnvironment {
                                 if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) s1.reviveWound();
                             }
 
+                            // Usuwanie martwych
                             if (!s2.isItAlive() || s2.getHealth() <= 0) {
                                 turnLogs.add("Ocalały pokonał innego ocalałego na pozycji [" + x + ", " + y + "]");
                                 s1.steal(s2); s2.die(); space.deleteAgent(s2); survivors.remove(s2);
@@ -459,9 +493,11 @@ public class SimulationEnvironment {
                             int roll = RNG.nextInt(zakazonyWeight + survivorWeight);
 
                             if (roll < zakazonyWeight) {
+                                // Zakażony atakuje
                                 survivor.changeHealthLevel(-Math.max(5, zakazonyWeight - (survivorWeight / 2)));
                                 if (RNG.nextFloat() < parameters.getHealChance()) zakazony.changeHealthLevel(5);
                                 if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) survivor.reviveWound();
+                                // Próba infekcji
                                 if (RNG.nextFloat() < parameters.getInfectionChance()) {
                                     boolean isPrevented = false;
                                     for(Equipment eq : survivor.getEquipment()){
@@ -472,10 +508,12 @@ public class SimulationEnvironment {
                                     if(!isPrevented){ transformSurvivor(survivor, zakazony, x, y); }
                                 }
                             } else {
+                                // Ocalały atakuje
                                 zakazony.changeHealthLevel(-Math.max(5, survivorWeight - (zakazonyWeight / 2)));
                                 if (RNG.nextFloat() < parameters.getChanceForWoundAfterBattle()) zakazony.reviveWound();
                             }
 
+                            // Usuwanie martwych
                             if (!zakazony.isItAlive() || zakazony.getHealth() <= 0) {
                                 turnLogs.add("Zakażony na pozycji [" + x + ", " + y + "] został zlikwidowany!");
                                 zakazony.die(); space.deleteAgent(zakazony); infected.remove(zakazony);
@@ -487,7 +525,7 @@ public class SimulationEnvironment {
                         }
                     }
 
-                    // podnoszenie ekwipunku i zasobów
+                    // podnoszenie ekwipunku i zasobów (tylko pierwsi ocalali na polu)
                     List<Agent> afterFight = new ArrayList<>(space.getAgents());
                     List<Survivor> survivorsAfter = new ArrayList<>();
                     for (Agent a : afterFight) {
@@ -514,6 +552,7 @@ public class SimulationEnvironment {
         healSurvivorsInSafeZones();
     }
 
+    // Przemienia ocalałego w zakażonego
     private void transformSurvivor(Survivor o, Infected z, int x, int y) {
         Infected newInfected = o.transformIntoInfected(z);
         turnLogs.add("Ocalały na pozycji [" + x + ", " + y + "] zmienił się w Zakażonego!");
@@ -523,6 +562,7 @@ public class SimulationEnvironment {
         board[y][x].addAgent(newInfected);
     }
 
+    // Usuwa martwych agentów z planszy
     private void deleteDeadAgents() {
         int width = board[0].length;
         int height = board.length;
@@ -540,16 +580,19 @@ public class SimulationEnvironment {
         agentList.removeIf(a -> !a.isItAlive());
     }
 
+    // Sprawdza i wyzwala zdarzenia losowe
     private void considerRandomEvent(){
         EventManager.runEventCheck(this.board);
     }
 
+    // Rozmieszcza ekwipunek na planszy
     private void spawnEquipmentOnBoard() {
         int weaponCount = parameters.getWeaponCount();
         int clothesCount = parameters.getClothesCount();
         equipmentSpawnStrategy.spawnEquipment(board, weaponCount, clothesCount);
     }
 
+    // Pomocnicza metoda do rozmieszczania przedmiotów
     private void spawnItems(List<Space> freeSpaces, int count, EquipmentFactory.EquipmentType type){
         int spawned = 0;
         int attempts = 0;
@@ -563,6 +606,7 @@ public class SimulationEnvironment {
         }
     }
 
+    // Strategia rozmieszczania ekwipunku - losowo na wolnych polach
     private void spawnEquipmentRandomly(Space[][] board, int weaponCount, int clothesCount) {
         List<Space> freeSpaces = new ArrayList<>();
         for (Space[] row : board) {
@@ -576,5 +620,6 @@ public class SimulationEnvironment {
         spawnItems(freeSpaces, clothesCount, EquipmentFactory.EquipmentType.CLOTHES);
     }
 
+    // Getter dla planszy
     public Space[][] getBoard() { return board; }
 }

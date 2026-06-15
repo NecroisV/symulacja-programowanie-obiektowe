@@ -17,6 +17,7 @@ public abstract class Agent {
     private boolean isAlive = true;
     private List<Wound> wounds = new ArrayList<>();
 
+    // Konstruktor agenta - ustawia pozycję, zdrowie, siłę, pole widzenia i prędkość
     protected Agent(int given_x, int given_y, int given_health, int given_baseStrength, int given_baseFOV, int given_baseSpeed){
         x = given_x;
         y = given_y;
@@ -27,8 +28,10 @@ public abstract class Agent {
         baseSpeed = given_baseSpeed;
     }
 
+    // Abstrakcyjna metoda obliczająca wagi dla pól - implementowana przez Survivor i Infected
     public abstract void getAgentWeights(Space start, Map<String, Integer> weights, int divisor);
 
+    // Wykonuje ruch agenta na podstawie obliczonych wag
     public int[] makeMove(Space start, Map<String, Integer> weights, int divisor) {
         getAgentWeights(start, weights, divisor);
         ArrayList<Space> availableSpaces = possibleMove(start);
@@ -39,6 +42,7 @@ public abstract class Agent {
         int totalWeightSum = 0;
         List<Integer> validWeights = new ArrayList<>();
 
+        // Zbieranie ważonych dostępnych pól
         for (Space s : availableSpaces) {
             int w = Math.max(0, s.getWeight());
             validWeights.add(w);
@@ -47,6 +51,7 @@ public abstract class Agent {
 
         int[] targetPosition;
 
+        // Jeśli wszystkie wagi są zerowe lub ujemne - wybierz pole z najwyższą wagą
         if (totalWeightSum <= 0) {
             Space bestWorst = availableSpaces.getFirst();
             for(Space s : availableSpaces){
@@ -56,6 +61,7 @@ public abstract class Agent {
             }
             targetPosition = bestWorst.getPosition();
         } else {
+            // Losowy wybór proporcjonalny do wag
             int rolledValue = RNG.nextInt(totalWeightSum);
             int currentSum = 0;
             int selectedIndex = availableSpaces.size() - 1;
@@ -69,6 +75,7 @@ public abstract class Agent {
             targetPosition = availableSpaces.get(selectedIndex).getPosition();
         }
 
+        // Resetowanie wag po wykonaniu ruchu
         for (Space s : getLocalArea(start)) {
             s.changeWeight(-s.getWeight());
         }
@@ -76,6 +83,7 @@ public abstract class Agent {
         return targetPosition;
     }
 
+    // Dodaje wagę do pola i rozlewa jej część na sąsiednie pola
     protected void addWeightWithSpill(Space s, int weight, int divisor) {
         if (s == null || s.isItWall()) return;
         s.changeWeight(weight);
@@ -89,6 +97,7 @@ public abstract class Agent {
         }
     }
 
+    // Pobiera wszystkie pola w zadanym promieniu (BFS)
     protected ArrayList<Space> getSpacesWithinRadius(Space start, int radius, boolean ignoreWalls) {
         if(this instanceof Survivor){
             ((Survivor) this).changeEnergyLevel(-5);
@@ -105,6 +114,7 @@ public abstract class Agent {
 
         int analysedIndex = 0;
 
+        // BFS do promienia radius
         while (analysedIndex < que.size()) {
             Space actual = que.get(analysedIndex);
             int actualDistance = distances.get(analysedIndex);
@@ -126,19 +136,23 @@ public abstract class Agent {
         return visitedSpaces;
     }
 
+    // Zwraca pola, na które agent może się poruszyć (uwzględnia prędkość)
     private ArrayList<Space> possibleMove(Space start) {
         return getSpacesWithinRadius(start, this.calculateSpeed(), false);
     }
 
+    // Zwraca lokalny obszar wokół agenta (FOV + prędkość)
     protected List<Space> getLocalArea(Space start) {
         int actionRadius = calculateFOV() + calculateSpeed();
         return getSpacesWithinRadius(start, actionRadius, false);
     }
 
+    // Określa, co agent widzi - uwzględnia linię widzenia (ściany blokują)
     public ArrayList<ArrayList<Space>> whatAgentSaw(Space start){
         int actualFOV = calculateFOV();
         ArrayList<Space> seenSpaces = getSpacesWithinRadius(start, actualFOV, true);
 
+        // Mapa do szybkiego dostępu do pól
         Map<String, Space> localGridMap = new HashMap<>();
         for (Space s : seenSpaces) {
             int[] pos = s.getPosition();
@@ -149,6 +163,7 @@ public abstract class Agent {
         ArrayList<Space> trulySeenAgentList = new ArrayList<>();
         ArrayList<Space> trulySeenEquipmentList = new ArrayList<>();
 
+        // Filtrowanie tylko pól z linią widzenia
         for (Space space : seenSpaces) {
             if (hasLineOfSight(start, space, localGridMap)) {
                 if (space.containsResource()) trulySeenResourceList.add(space);
@@ -165,6 +180,7 @@ public abstract class Agent {
         return seenThing;
     }
 
+    // Sprawdza linię widzenia między dwoma polami (algorytm Bresenhama)
     private boolean hasLineOfSight(Space start, Space target, Map<String, Space> localGridMap) {
         int[] pos0 = start.getPosition();
         int[] pos1 = target.getPosition();
@@ -183,6 +199,7 @@ public abstract class Agent {
         while (true) {
             Space currentSpace = localGridMap.get(x0 + "," + y0);
 
+            // Sprawdź czy pole nie jest ścianą (pomijamy pole startowe)
             if ((x0 != pos0[0] || y0 != pos0[1])) {
                 if (currentSpace == null || currentSpace.isItWall()) {
                     return false;
@@ -206,15 +223,18 @@ public abstract class Agent {
         return true;
     }
 
+    // Zwiększa wiek agenta o 1 tick
     public void ageUp(){
         age++;
     }
 
+    // Zabija agenta
     public void die() {
         this.isAlive = false;
         this.healthLevel = 0;
     }
 
+    // Zmienia poziom zdrowia - uwzględnia redukcję obrażeń z ubrań dla ocalałych
     public void changeHealthLevel(int amount) {
         if(this instanceof Survivor && amount < 0){
             for(Equipment equipment : ((Survivor) this).getEquipment()){
@@ -224,6 +244,7 @@ public abstract class Agent {
             }
         }
         this.healthLevel += amount;
+        // Przy leczeniu jest szansa na wyleczenie rany
         if (amount > 0){
             if (RNG.nextFloat(1)>SimulationParameters.getInstance().getHealChance()) healWound();
         }
@@ -233,6 +254,7 @@ public abstract class Agent {
         if(healthLevel>maxHealthLevel) healthLevel = maxHealthLevel;
     }
 
+    // Oblicza aktualne pole widzenia - uwzględnia porę dnia i rany głowy
     public int calculateFOV(){
         int currentFOV = (int) (baseFOV * TimeOfDay.getVisibilityLevel(SimulationApp.getEnvironment().getActualTick()));
         for(Wound wound : wounds){
@@ -243,6 +265,7 @@ public abstract class Agent {
         return Math.max(0, currentFOV);
     }
 
+    // Oblicza aktualną siłę - uwzględnia broń, głód i rany rąk
     public int calculateStrength(){
         int currentStrength = baseStrength;
         for(Wound wound : wounds){
@@ -255,13 +278,14 @@ public abstract class Agent {
             for(Equipment equipment : ((Survivor) this).getEquipment()){
                 if (equipment instanceof Weapon){
                     currentStrength += ((Weapon) equipment).calculateActualStrength();
-                    ((Weapon) equipment).loseDurability();
+                    ((Weapon) equipment).loseDurability(); // Broń traci wytrzymałość przy użyciu
                 }
             }
         }
         return Math.max(1, currentStrength);
     }
 
+    // Oblicza aktualną prędkość - uwzględnia rany nóg
     public int calculateSpeed(){
         int currentSpeed = baseSpeed;
         for(Wound wound : wounds){
@@ -273,18 +297,16 @@ public abstract class Agent {
     }
 
     public boolean isItAlive(){return isAlive;}
-
-    public int[] getPosition(){
-        return new int[]{x, y};
-    }
-
+    public int[] getPosition(){ return new int[]{x, y}; }
     public int getHealth(){return healthLevel;}
 
+    // Leczy losową ranę
     public void healWound() {
         if (wounds.isEmpty()) return;
         wounds.remove(RNG.nextInt(wounds.size()));
     }
 
+    // Zadaje losową ranę (głowy, ręki lub nogi)
     public void reviveWound(){
         switch (RNG.nextInt(3)){
             case(0) -> wounds.add(new HeadWound());
