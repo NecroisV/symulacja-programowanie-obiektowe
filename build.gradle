@@ -34,12 +34,14 @@ if (osName.contains("win")) {
 dependencies {
 
     implementation "org.openjfx:javafx-base:23:${currentPlatform}"
-
     implementation "org.openjfx:javafx-controls:23:${currentPlatform}"
     implementation "org.openjfx:javafx-graphics:23:${currentPlatform}"
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
+
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
