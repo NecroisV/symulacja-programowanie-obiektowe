@@ -92,7 +92,7 @@ public class SimulationParameters {
     private final int[] eventDuration = new int[]{1, 5};
 
     /** Prawdopodobieństwo jednostkowe ([0.0, 1.0]) zrujnowania konkretnej ściany w trakcie trzęsienia ziemi. */
-    private final double earthquakeWallDestroyChance = 0.05;
+    private final double earthquakeWallDestroyChance = 0.5;
 
     /** Zakres redukcji widoczności w trakcie wystąpienia mgły: [minimalne_zamglenie, maksymalne_zamglenie]. */
     private final double[] fogIntensity = new double[]{0.2, 0.6};
@@ -163,16 +163,16 @@ public class SimulationParameters {
     private void loadProfile(int profileNumber) {
         switch (profileNumber) {
             case 1:
-                this.startingSurvivorAmount = 25;
-                this.startingInfectedAmount = 500;
-                this.weaponCount = 30;
-                this.clothesCount = 30;
-                this.resourceCount = 100;
-                this.safeZoneCount = 1;
+                this.startingSurvivorAmount = 2500;
+                this.startingInfectedAmount = 7000;
+                this.weaponCount = 3000;
+                this.clothesCount = 3000;
+                this.resourceCount = 1000;
+                this.safeZoneCount = 10;
                 this.healChance = 0.25f;
                 this.infectionChance = 0.10f;
                 this.chanceForWoundAfterBattle = 0.20f;
-                this.eventChances = new double[]{0.25, 10, 20, 2};
+                this.eventChances = new double[]{0.25, 10, 20, 200};
                 break;
 
             case 2:

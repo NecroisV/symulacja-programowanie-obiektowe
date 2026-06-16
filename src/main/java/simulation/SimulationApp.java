@@ -17,13 +17,13 @@ import javafx.stage.Stage;
 public class SimulationApp extends Application {
 
     /** Szerokość planszy wyrażona w liczbie kafelków. */
-    private static final int BOARD_WIDTH = 120;
+    private static final int BOARD_WIDTH = 1000;
 
     /** Wysokość planszy wyrażona w liczbie kafelków. */
-    private static final int BOARD_HEIGHT = 60;
+    private static final int BOARD_HEIGHT = 600;
 
     /** Fizyczny rozmiar boku jednego kafelka na ekranie (w pikselach). */
-    private static final double TILE_SIZE = 10.0;
+    private static final double TILE_SIZE = 2.0;
 
     /** Wysokość dolnego panelu przeznaczonego na logi i statystyki (w pikselach). */
     private static final double LOGS_HEIGHT = 160.0;

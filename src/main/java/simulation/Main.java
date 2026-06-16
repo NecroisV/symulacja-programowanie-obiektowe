@@ -19,7 +19,7 @@ public class Main {
     static void main(String[] args) {
         SimulationParameters.getInstance().setSeed(256);
         RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
-        SimulationParameters.setProfile(3); // ustawienie profilu pod pokaz
+        SimulationParameters.setProfile(1); // ustawienie profilu pod pokaz
         SimulationApp.main(args);
     }
 }

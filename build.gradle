@@ -12,10 +12,10 @@ java {
     }
 }
 application {
-    mainClass = 'org.example.Main'
+    mainClass = 'simulation.Main'
 }
 
-group = 'org.example'
+group = 'simulation'
 version = '1.0-SNAPSHOT'
 
 repositories {
