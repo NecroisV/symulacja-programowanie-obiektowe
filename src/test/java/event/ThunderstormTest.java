@@ -5,6 +5,8 @@ import agent.Survivor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import simulation.RNG;
+import simulation.SimulationParameters;
 import simulation.Space;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,6 +18,8 @@ class ThunderstormTest {
 
     @BeforeEach
     void setUp() {
+        RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
+
         thunderstorm = new Thunderstorm();
 
         // Tworzymy małą planszę testową 3x3

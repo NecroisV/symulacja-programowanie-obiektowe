@@ -1,10 +1,20 @@
 package equipment;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import simulation.RNG;
+import simulation.SimulationParameters;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WeaponTest {
+
+
+    @BeforeEach
+    void setUp() {
+        RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
+    }
 
     @Test
     @DisplayName("Nowa broń powinna zadawać pełne, bazowe obrażenia")

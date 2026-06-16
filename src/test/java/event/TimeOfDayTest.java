@@ -1,10 +1,19 @@
 package event;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import simulation.RNG;
+import simulation.SimulationParameters;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TimeOfDayTest {
+
+    @BeforeEach
+    void setUp() {
+        RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
+    }
 
     @Test
     @DisplayName("Poziom widoczności nigdy nie powinien spaść poniżej twardego limitu 20%")

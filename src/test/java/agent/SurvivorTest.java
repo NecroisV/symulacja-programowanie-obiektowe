@@ -7,9 +7,12 @@ import equipment.Weapon;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import simulation.RNG;
+import simulation.SimulationParameters;
 import simulation.Space;
 
 import java.util.List;
+import java.util.SimpleTimeZone;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,8 +21,11 @@ class SurvivorTest {
     private Survivor attacker;
     private Survivor victim;
 
+
     @BeforeEach
     void setUp() {
+
+        RNG.initRNG(SimulationParameters.getInstance().getSimulationSeed());
         // Inicjalizacja dwóch agentów na potrzebę testów interakcji
         // Parametry konstruktora: x, y, health, strength, FOV, speed
         attacker = new Survivor(0, 0, 100, 15, 3, 2);
